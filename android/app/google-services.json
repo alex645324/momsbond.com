@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "974452187234",
+    "project_id": "mymomsapp-59faa",
+    "storage_bucket": "mymomsapp-59faa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:974452187234:android:99b4f6bd3c750013e5713b",
+        "android_client_info": {
+          "package_name": "com.example.mvp_code"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7faTdfDqMsj_08PU9Bk9VaclA3mRxNYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
