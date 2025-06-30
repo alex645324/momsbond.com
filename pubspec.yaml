@@ -25,6 +25,12 @@ dependencies:
   flutter_chat_types: ^3.6.2  # Types for chat functionality
   http: 1.3.0
   google_sign_in: ^6.1.5
+  provider: ^6.1.1  # State management for MVVM
+  crypto: ^3.0.3  # For password hashing
+  shared_preferences: ^2.0.15  # For cross-platform local storage
+  
+  # Admin terminal dependencies
+  intl: ^0.18.1  # For date formatting in admin terminal
 
 dev_dependencies:
   flutter_test:

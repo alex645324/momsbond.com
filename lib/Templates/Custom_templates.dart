@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Templates/conversation_helper.dart';
-import '../Database_logic/auth_manager.dart';
-import '../Screens/GoogleSignInPage.dart';
+import '../Database_logic/simple_auth_manager.dart';
+import '../views/homepage_view.dart';
 
 // this is the same text alignment for headers and titles 
 
@@ -454,15 +454,15 @@ class UserAccountHeader extends StatelessWidget {
               print("Current user: $username");
               print("="*50);
               
-              await AuthManager().signOut();
+              await SimpleAuthManager().signOut();
               
-              print("User signed out, navigating to GoogleSignInPage");
+              print("User signed out, navigating to HomepageView");
               print("="*50 + "\n");
               
               // Navigate back to sign in
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const GoogleSignInPage()),
+                MaterialPageRoute(builder: (context) => const HomepageView()),
                 (route) => false,
               );
             },

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../Screens/QuestionSet1.dart';
-import '../Screens/QuestionSet2.dart';
+import '../views/challenges_view.dart';
 
 class NavigationHelper {
   static Future<void> navigateBasedOnStages(
@@ -11,22 +10,22 @@ class NavigationHelper {
         (stage) => stage == "teen mom?" || stage == "adult mom?");
 
     if (hasYoungChild && hasOlderChild) {
-      // Mismatch → open QSet1 in mismatch mode
+      // Mismatch → open unified challenges view with both sets
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const QuestionSet1(isMismatch: true)),
+        MaterialPageRoute(builder: (_) => const ChallengesView(isMismatch: true)),
       );
     } else if (hasYoungChild) {
-      // Only young
+      // Only young → unified challenges view starting with set 1
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const QuestionSet1(isMismatch: false)),
+        MaterialPageRoute(builder: (_) => const ChallengesView(isMismatch: false)),
       );
     } else if (hasOlderChild) {
-      // Only older
+      // Only older → unified challenges view starting with set 2
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const QuestionSet2()),
+        MaterialPageRoute(builder: (_) => const ChallengesView(isMismatch: false, startingSet: 2)),
       );
     } else {
       // None selected or unknown case

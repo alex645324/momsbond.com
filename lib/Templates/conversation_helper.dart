@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-import '../Screens/ChatPage.dart';
+
+import '../views/messages_view.dart';
+import '../models/messages_model.dart';
 
 class ConversationHelper {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,13 +30,12 @@ class ConversationHelper {
   }
 
   /// Updates the user's conversation status
-  static Future<void> updateUserConversationStatus(String userId, bool isInConversation, String? conversationId) async {
+  static Future<void> updateUserConversationStatus(String userId, bool isInConversation) async {
     try {
-      print("ConversationHelper: Updating user $userId status to isInConversation=$isInConversation, conversationId=$conversationId");
+      print("ConversationHelper: Updating user $userId status to isInConversation=$isInConversation");
       
       await _firestore.collection('users').doc(userId).update({
         'isInConversation': isInConversation,
-        'activeConversationId': conversationId,
         'lastStatusUpdate': FieldValue.serverTimestamp(),
       });
       
@@ -73,48 +73,40 @@ class ConversationHelper {
         return;
       }
       
-      // Create the current user object for chat
-      final types.User currentUser = types.User(
-        id: currentUserId,
-        firstName: matchData['userAId'] == currentUserId 
-            ? matchData['userAName'] 
-            : matchData['userBName'],
-      );
-      
-      // Extract match data to pass to chat
-      final Map<String, dynamic> chatMatchData = {
-        'conversationId': conversationId,
-        'currentUser': {
-          'id': currentUserId,
-          'username': matchData['userAId'] == currentUserId 
+      // Create init data for chat
+      final initData = ConversationInitData(
+        conversationId: conversationId,
+        currentUser: CurrentUserData(
+          id: currentUserId,
+          username: matchData['userAId'] == currentUserId 
               ? matchData['userAName'] 
               : matchData['userBName'],
-          'momStage': matchData['userAId'] == currentUserId 
+          momStage: List<String>.from(matchData['userAId'] == currentUserId 
               ? matchData['momStagesA'] 
-              : matchData['momStagesB'],
-          'selectedQuestions': matchData['userAId'] == currentUserId 
+              : matchData['momStagesB']),
+          selectedQuestions: List<String>.from(matchData['userAId'] == currentUserId 
               ? matchData['selectedQuestionsA'] 
-              : matchData['selectedQuestionsB'],
-        },
-        'matchedUser': {
-          'id': otherUserId,
-          'username': matchData['userAId'] == currentUserId 
+              : matchData['selectedQuestionsB']),
+        ),
+        matchedUser: MatchedUserData(
+          id: otherUserId,
+          username: matchData['userAId'] == currentUserId 
               ? matchData['userBName'] 
               : matchData['userAName'],
-          'momStage': matchData['userAId'] == currentUserId 
+          momStage: List<String>.from(matchData['userAId'] == currentUserId 
               ? matchData['momStagesB'] 
-              : matchData['momStagesA'],
-          'selectedQuestions': matchData['userAId'] == currentUserId 
+              : matchData['momStagesA']),
+          selectedQuestions: List<String>.from(matchData['userAId'] == currentUserId 
               ? matchData['selectedQuestionsB'] 
-              : matchData['selectedQuestionsA'],
-        },
-        'matchId': matchData['id'],
-      };
+              : matchData['selectedQuestionsA']),
+        ),
+        matchId: matchData['id'],
+      );
       
-      print("ConversationHelper: Prepared chat match data: $chatMatchData");
+      print("ConversationHelper: Prepared chat init data: $initData");
       
       // Update current user status
-      await updateUserConversationStatus(currentUserId, true, conversationId);
+      await updateUserConversationStatus(currentUserId, true);
       
       print("ConversationHelper: Navigating to chat page");
       
@@ -122,16 +114,12 @@ class ConversationHelper {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ChatPage(
-            conversationId: conversationId,
-            currentUser: currentUser,
-            matchData: chatMatchData,
-          ),
+          builder: (context) => MessagesView(initData: initData),
         ),
       ).then((_) {
         // When chat is closed, update status
         print("ConversationHelper: Chat closed, updating user status");
-        updateUserConversationStatus(currentUserId, false, null);
+        updateUserConversationStatus(currentUserId, false);
       });
       
     } catch (e) {
