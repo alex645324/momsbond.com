@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'Database_logic/firebase_options.dart';
-import 'Database_logic/admin_service.dart';
 import 'views/loading_view.dart';
 import 'views/homepage_view.dart';
 import 'views/login_view.dart';
@@ -20,17 +19,21 @@ import 'Database_logic/simple_auth_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    // Initialize Firebase (this should be quick)
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("Firebase initialized successfully");
+  } catch (e) {
+    print("Firebase initialization failed: $e");
+  }
   
-  // Initialize Admin Service for live configuration updates
-  await AdminService.initialize();
-  
-  // Initialize Simple Auth Manager
+  // Don't wait for AuthManager either - initialize in background
   final authManager = SimpleAuthManager();
-  await authManager.initialize();
+  authManager.initialize().catchError((e) {
+    print("AuthManager initialization failed: $e");
+  });
   
   runApp(const MyApp());
 }

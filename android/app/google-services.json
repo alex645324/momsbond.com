@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "974452187234",
-    "project_id": "mymomsapp-59faa",
-    "storage_bucket": "mymomsapp-59faa.firebasestorage.app"
+    "project_number": "622563597618",
+    "project_id": "emotion-e305b",
+    "storage_bucket": "emotion-e305b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:974452187234:android:99b4f6bd3c750013e5713b",
+        "mobilesdk_app_id": "1:622563597618:android:231cae28690f2b91118b2b",
         "android_client_info": {
           "package_name": "com.example.mvp_code"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD7faTdfDqMsj_08PU9Bk9VaclA3mRxNYo"
+          "current_key": "AIzaSyCW1Y_MYY9678M8bWyNWyiMLZfgAgvyteU"
         }
       ],
       "services": {

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/messages_model.dart';
 import '../viewmodels/messages_viewmodel.dart';
-import '../Database_logic/admin_service.dart';
 import 'dashboard_view.dart';
 
 class MessagesView extends StatefulWidget {
@@ -193,12 +192,7 @@ class _MessagesViewState extends State<MessagesView> {
                       ),
                     ),
 
-                  // Admin configuration display (top right)
-                  Positioned(
-                    top: 20 * scaleFactor,
-                    right: 20 * scaleFactor,
-                    child: _buildAdminConfigDisplay(scaleFactor),
-                  ),
+
 
 
                   
@@ -553,77 +547,5 @@ class _MessagesViewState extends State<MessagesView> {
     );
   }
 
-  Widget _buildAdminConfigDisplay(double scaleFactor) {
-    return StreamBuilder<Map<String, dynamic>>(
-      stream: AdminService.configStream,
-      builder: (context, snapshot) {
-        return Container(
-          padding: EdgeInsets.all(8 * scaleFactor),
-          decoration: BoxDecoration(
-            color: const Color(0xFF574F4E).withOpacity(0.9),
-            borderRadius: BorderRadius.circular(8 * scaleFactor),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.admin_panel_settings,
-                    size: 12 * scaleFactor,
-                    color: Colors.white,
-                  ),
-                  SizedBox(width: 4 * scaleFactor),
-                  Text(
-                    'ADMIN LIVE',
-                    style: GoogleFonts.poppins(
-                      fontSize: 8 * scaleFactor,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4 * scaleFactor),
-              Text(
-                'Timer: ${AdminService.getConversationDuration()}s',
-                style: GoogleFonts.poppins(
-                  fontSize: 7 * scaleFactor,
-                  color: Colors.white.withOpacity(0.9),
-                ),
-              ),
-              Text(
-                'Decay: ${AdminService.getConnectionDecayDays()}d',
-                style: GoogleFonts.poppins(
-                  fontSize: 7 * scaleFactor,
-                  color: Colors.white.withOpacity(0.9),
-                ),
-              ),
-              if (AdminService.isQuickExpirationMode())
-                Container(
-                  margin: EdgeInsets.only(top: 2 * scaleFactor),
-                  padding: EdgeInsets.symmetric(horizontal: 4 * scaleFactor, vertical: 1 * scaleFactor),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(3 * scaleFactor),
-                  ),
-                  child: Text(
-                    'QUICK MODE',
-                    style: GoogleFonts.poppins(
-                      fontSize: 6 * scaleFactor,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+
 } 

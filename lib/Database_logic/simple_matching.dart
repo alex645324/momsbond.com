@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'admin_service.dart';
 import 'dart:async';
 
 /// Simplified matching system optimized for current needs with future extensibility
@@ -180,9 +179,9 @@ class SimpleMatching {
     final currentUserName = currentUserDoc.data()?['username'] ?? 'Unknown';
     final matchedUserName = matchedUserDoc.data()?['username'] ?? 'Unknown';
     
-    // Create match record with admin-configured conversation duration
+    // Create match record with hard-coded conversation duration
     final matchRef = _firestore.collection('matches').doc();
-    final conversationDuration = AdminService.getConversationDuration();
+    final conversationDuration = 30; // Hard-coded 30 seconds
     final expiresAt = DateTime.now().add(Duration(seconds: conversationDuration));
     
     final matchData = {
@@ -203,17 +202,15 @@ class SimpleMatching {
     
     await matchRef.set(matchData);
     
-    // Create connection in AdminService for tracking
-    await AdminService.createConnection(
-      userAId: currentUserId,
-      userBId: matchedUserId,
-      userAName: currentUserName,
-      userBName: matchedUserName,
-    );
-    
-    // Update user statuses to 'in_conversation'
-    await AdminService.updateUserStatus(currentUserId, 'in_conversation');
-    await AdminService.updateUserStatus(matchedUserId, 'in_conversation');
+    // Update user statuses to 'in_conversation' (replacing AdminService.updateUserStatus)
+    await _firestore.collection('users').doc(currentUserId).update({
+      'status': 'in_conversation',
+      'lastActive': FieldValue.serverTimestamp(),
+    });
+    await _firestore.collection('users').doc(matchedUserId).update({
+      'status': 'in_conversation',
+      'lastActive': FieldValue.serverTimestamp(),
+    });
     
     // Prepare user-specific match data
     final currentUserMatchData = {
@@ -330,8 +327,9 @@ class SimpleMatching {
 
   /// Reset user status for new matching
   static Future<void> resetUserForMatching(String userId) async {
-    await AdminService.updateUserStatus(userId, 'waiting');
     await _firestore.collection('users').doc(userId).update({
+      'status': 'waiting',
+      'lastActive': FieldValue.serverTimestamp(),
       'isWaiting': true,
       'isInConversation': false,
       'matchData': FieldValue.delete(),
@@ -340,33 +338,100 @@ class SimpleMatching {
 
   /// Clean up user status
   static Future<void> cleanupUserStatus(String userId) async {
-    await AdminService.updateUserStatus(userId, 'offline');
     await _firestore.collection('users').doc(userId).update({
+      'status': 'offline',
+      'lastActive': FieldValue.serverTimestamp(),
       'isWaiting': false,
       'isInConversation': false,
       'matchData': FieldValue.delete(),
     });
   }
 
-  /// Start conversation timer using admin configuration
+  /// Start conversation timer with hard-coded duration
   static Timer? startConversationTimer({
     required String matchId,
     required VoidCallback onTimeUp,
   }) {
-    return AdminService.startConversationTimer(
-      matchId: matchId,
-      onTimeUp: onTimeUp,
-    );
+    final duration = Duration(seconds: 30); // Hard-coded 30 seconds
+    
+    print('SimpleMatching: Starting conversation timer for ${duration.inSeconds} seconds');
+    
+    return Timer(duration, () {
+      print('SimpleMatching: Conversation time up for match $matchId');
+      onTimeUp();
+    });
   }
 
-  /// Get user connections with strength tracking
-  static Future<List<Map<String, dynamic>>> getUserConnections(String userId) {
-    return AdminService.getUserConnections(userId);
+  /// Get user connections with strength tracking (hard-coded decay logic)
+  static Future<List<Map<String, dynamic>>> getUserConnections(String userId) async {
+    try {
+      final connections = await _firestore
+          .collection('matches')
+          .where('userA', isEqualTo: userId)
+          .get();
+      
+      final connections2 = await _firestore
+          .collection('matches')
+          .where('userB', isEqualTo: userId)
+          .get();
+      
+      final allConnections = [...connections.docs, ...connections2.docs];
+      
+      return allConnections.map((doc) {
+        final data = doc.data();
+        final lastContact = (data['lastContact'] as Timestamp?)?.toDate() ?? 
+                           (data['createdAt'] as Timestamp?)?.toDate() ?? 
+                           DateTime.now();
+        
+        // Hard-coded connection strength calculation (7 days decay period)
+        final now = DateTime.now();
+        final timeSinceContact = now.difference(lastContact);
+        final decayPeriod = Duration(days: 7); // Hard-coded 7 days
+        
+        int currentStrength = 0;
+        if (timeSinceContact < decayPeriod) {
+          final decayProgress = timeSinceContact.inMilliseconds / decayPeriod.inMilliseconds;
+          currentStrength = (100 * (1 - decayProgress)).round().clamp(0, 100);
+        }
+        
+        // Hard-coded warning threshold (24 hours)
+        final warningThreshold = Duration(hours: 24);
+        final needsWarning = timeSinceContact >= warningThreshold;
+        
+        return {
+          'id': doc.id,
+          'userA': data['userA'],
+          'userB': data['userB'],
+          'userAName': data['userAName'] ?? 'Unknown',
+          'userBName': data['userBName'] ?? 'Unknown',
+          'lastContact': lastContact,
+          'strength': currentStrength,
+          'needsWarning': needsWarning,
+          'status': currentStrength > 0 ? 'active' : 'expired',
+          ...data,
+        };
+      }).toList();
+    } catch (e) {
+      print('SimpleMatching: Error getting user connections: $e');
+      return [];
+    }
   }
 
   /// Update connection contact time (when users interact)
-  static Future<void> updateConnectionContact(String connectionId) {
-    return AdminService.updateConnectionContact(connectionId);
+  static Future<void> updateConnectionContact(String connectionId) async {
+    try {
+      final strength = 100; // Reset to full strength on contact
+      
+      await _firestore.collection('matches').doc(connectionId).update({
+        'lastContact': FieldValue.serverTimestamp(),
+        'strength': strength,
+        'status': 'active',
+      });
+      
+      print('SimpleMatching: Updated connection $connectionId contact time');
+    } catch (e) {
+      print('SimpleMatching: Error updating connection contact: $e');
+    }
   }
 
   // TODO: Future enhancement - add question-based matching scoring

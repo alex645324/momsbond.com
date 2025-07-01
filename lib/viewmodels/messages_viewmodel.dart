@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/messages_model.dart';
 import '../viewmodels/dashboard_viewmodel.dart';
-import '../Database_logic/admin_service.dart';
 import '../Database_logic/simple_matching.dart';
 
 class MessagesViewModel extends ChangeNotifier {
@@ -75,8 +74,8 @@ class MessagesViewModel extends ChangeNotifier {
       // Set up real-time message listener
       _setupMessageListener();
 
-      // Get admin-configured conversation duration
-      final conversationDuration = AdminService.getConversationDuration();
+      // Hard-coded conversation duration
+      final conversationDuration = 30; // Hard-coded 30 seconds
       final endTime = DateTime.now().add(Duration(seconds: conversationDuration));
       
       _updateState(_messagesModel.copyWith(

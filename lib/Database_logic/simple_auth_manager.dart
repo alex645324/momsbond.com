@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:crypto/crypto.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -80,7 +81,7 @@ class SimpleAuthManager {
       final userId = _generateUserId();
       final hashedPassword = _hashPassword(password);
 
-      // Store user
+      // Store user locally
       users[username.toLowerCase()] = {
         'userId': userId,
         'username': username, // Store original case
@@ -95,8 +96,9 @@ class SimpleAuthManager {
 
       await _saveUsers(users);
 
-      // Create Firestore user document
-      await _createFirestoreUser(userId, username);
+      // SKIP Firestore creation for now to test if that's the bottleneck
+      // await _createFirestoreUser(userId, username);
+      print("SimpleAuth: SKIPPING Firestore user creation to test speed");
 
       // Sign in the user
       _currentUserId = userId;
@@ -108,7 +110,7 @@ class SimpleAuthManager {
         await _saveRememberMe(userId, username);
       }
 
-      print("SimpleAuth: User signed up successfully: $username ($userId)");
+      print("SimpleAuth: User signed up successfully (local only): $username ($userId)");
       return SignUpResult(success: true, message: "Account created successfully!");
 
     } catch (e) {
@@ -271,17 +273,30 @@ class SimpleAuthManager {
   }
 
   Future<void> _createFirestoreUser(String userId, String username) async {
-    await _firestore.collection('users').doc(userId).set({
-      'username': username,
-      'isInConversation': false,
-      'lastStatusUpdate': FieldValue.serverTimestamp(),
-      'authMethod': 'simple',
-      'createdAt': FieldValue.serverTimestamp(),
-      'isWaiting': false,
-      'momStage': null,
-      'questionSet1': null,
-      'questionSet2': null,
-    }, SetOptions(merge: true));
+    try {
+      // Create user document in Firestore with timeout protection
+      await _firestore.collection('users').doc(userId).set({
+        'username': username,
+        'isInConversation': false,
+        'lastStatusUpdate': FieldValue.serverTimestamp(),
+        'authMethod': 'simple',
+        'createdAt': FieldValue.serverTimestamp(),
+        'isWaiting': false,
+        'momStage': null,
+        'questionSet1': null,
+        'questionSet2': null,
+      }, SetOptions(merge: true)).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print("SimpleAuth: Firestore user creation timed out - continuing anyway");
+          return;
+        },
+      );
+      print("SimpleAuth: User document created successfully in Firestore");
+    } catch (e) {
+      print("SimpleAuth: Error creating user in Firestore: $e");
+      // Don't throw error - app can continue without Firestore if needed
+    }
   }
 
   // Additional methods needed by other viewmodels
@@ -299,15 +314,23 @@ class SimpleAuthManager {
         return false;
       }
 
+      // Save to Firestore with timeout protection
       await _firestore.collection('users').doc(_currentUserId).set({
         field: value,
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      }, SetOptions(merge: true)).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print("SimpleAuth: Firestore save timed out for field: $field");
+          throw TimeoutException('Firestore operation timed out', const Duration(seconds: 10));
+        },
+      );
       
-      print("SimpleAuth: User data saved: $field = $value for user $_currentUserId");
+      print("SimpleAuth: Successfully saved $field to Firestore");
       return true;
     } catch (e) {
-      print("SimpleAuth: Error saving user data: $e");
+      print("SimpleAuth: Error saving data to Firestore: $e");
+      // Return false but don't crash the app
       return false;
     }
   }
@@ -340,7 +363,14 @@ class SimpleAuthManager {
         return null;
       }
 
-      DocumentSnapshot doc = await _firestore.collection('users').doc(_currentUserId).get();
+      DocumentSnapshot doc = await _firestore.collection('users').doc(_currentUserId).get().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print("SimpleAuth: Firestore getUserData timed out");
+          throw TimeoutException('Firestore operation timed out', const Duration(seconds: 10));
+        },
+      );
+      
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
         print("SimpleAuth: Retrieved user data for $_currentUserId");
