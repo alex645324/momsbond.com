@@ -312,7 +312,7 @@ class LoadingViewModel extends ChangeNotifier {
       matchData: null,
       userData: null,
       errorMessage: null,
-      loadingText: 'finding you the perfect connection...',
+      loadingText: 'finding you the perfect connection.',
     ));
     print("DEBUG: LoadingViewModel state reset - shouldNavigateToChat: ${_loadingModel.shouldNavigateToChat}");
   }

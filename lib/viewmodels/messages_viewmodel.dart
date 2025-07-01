@@ -75,7 +75,7 @@ class MessagesViewModel extends ChangeNotifier {
       _setupMessageListener();
 
       // Hard-coded conversation duration
-      final conversationDuration = 30; // Hard-coded 30 seconds
+      final conversationDuration = 300; // 5 minutes
       final endTime = DateTime.now().add(Duration(seconds: conversationDuration));
       
       _updateState(_messagesModel.copyWith(

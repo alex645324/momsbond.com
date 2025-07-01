@@ -528,7 +528,7 @@ class UserAccountHeader extends StatelessWidget {
 
 // this is custom box for the dashboard for the user to see there conncetions 
 
-class CustomConnectionCard extends StatelessWidget {
+class CustomConnectionCard extends StatefulWidget {
   /// The name of the connection to display inside the card.
   final String connectionName;
 
@@ -546,18 +546,43 @@ class CustomConnectionCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<CustomConnectionCard> createState() => _CustomConnectionCardState();
+}
+
+class _CustomConnectionCardState extends State<CustomConnectionCard> with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    print("CustomConnectionCard: Building card for $connectionName, available: $isAvailable, inactive days: $inactiveDays");
+    print("CustomConnectionCard: Building card for ${widget.connectionName}, available: ${widget.isAvailable}, inactive days: ${widget.inactiveDays}");
     
-    // Calculate opacity based on inactivity
-    double opacity = 1.0;
-    if (inactiveDays >= 1) {
-      opacity = 0.5; // Fade to 50% opacity after 1 day
-    }
-    
+    // No decay visualisation – always full opacity
+    final double opacity = 1.0;
+
     return Opacity(
       opacity: opacity,
-      child: Stack(
+      child: _buildCard(),
+    );
+  }
+  
+  Widget _buildCard() {
+    return Stack(
         children: [
           Container(
             width: 97,
@@ -580,7 +605,7 @@ class CustomConnectionCard extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                connectionName,
+                widget.connectionName,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontFamily: "Nuosu SIL",
@@ -599,7 +624,7 @@ class CustomConnectionCard extends StatelessWidget {
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color: isAvailable ? Colors.green : Colors.red,
+                color: widget.isAvailable ? Colors.green : Colors.red,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: Colors.white,
@@ -608,31 +633,6 @@ class CustomConnectionCard extends StatelessWidget {
               ),
             ),
           ),
-          
-          // Show warning indicator if inactive for 1+ days
-          if (inactiveDays >= 1)
-            Positioned(
-              bottom: 10,
-              right: 10,
-              child: Tooltip(
-                message: "Inactive for ${inactiveDays} day${inactiveDays > 1 ? 's' : ''}",
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: const BoxDecoration(
-                    color: Colors.amber,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.access_time,
-                      size: 14,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

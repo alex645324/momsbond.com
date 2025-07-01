@@ -214,24 +214,13 @@ class ConnectionData {
     required int daysSinceInteraction,
     required int totalConversations,
   }) {
-    int strength = baseStrength;
-    
-    strength -= (daysSinceInteraction * 5);
-    
-    if (totalConversations > 1) {
-      strength += ((totalConversations - 1) * 2);
-    }
-    
-    return strength.clamp(0, 100);
+    // Decay logic removed: simply return the stored baseStrength without deductions
+    return baseStrength.clamp(0, 100);
   }
 
   static double _calculateVisualOpacity(int strength) {
-    if (strength >= 80) return 1.0;
-    if (strength >= 60) return 0.9;
-    if (strength >= 40) return 0.7;
-    if (strength >= 20) return 0.5;
-    if (strength >= 10) return 0.3;
-    return 0.0;
+    // Always full opacity now that decay is removed
+    return 1.0;
   }
 
   String get displayName => otherUserName.isNotEmpty ? otherUserName : 'User';
@@ -239,7 +228,7 @@ class ConnectionData {
     if (!isActive) return 'Connection Fading';
     if (isInWarningState) return 'Needs Attention';
     if (isAvailable) return 'Available';
-    return 'Connected';
+    return 'tap to talk again';
   }
   
   String get strengthDescription {

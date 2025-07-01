@@ -4,6 +4,81 @@ import '../Database_logic/simple_auth_manager.dart';
 import 'challenges_view.dart';
 import 'stage_selection_view.dart';
 
+// Circle configuration class for decorative elements
+class CircleConfig {
+  final double? left;
+  final double? right;
+  final double? top;
+  final double? bottom;
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const CircleConfig({
+    this.left,
+    this.right,
+    this.top,
+    this.bottom,
+    required this.size,
+    required this.color,
+    this.opacity = 0.3,
+  });
+}
+
+// Circle configurations for decorative background
+const decorativeCircles = [
+  CircleConfig(
+    left: 20,
+    top: 40,
+    size: 80,
+    color: Color(0xFFEFD4E2), // Pink
+    opacity: 0.25,
+  ),
+  CircleConfig(
+    right: 30,
+    top: 120,
+    size: 100,
+    color: Color(0xFFEDE4C6), // Yellow
+    opacity: 0.2,
+  ),
+  CircleConfig(
+    left: 40,
+    bottom: 100,
+    size: 70,
+    color: Color(0xFFD8DAC5), // Green
+    opacity: 0.25,
+  ),
+  CircleConfig(
+    right: 50,
+    bottom: 60,
+    size: 90,
+    color: Color(0xFFEFD4E2), // Pink
+    opacity: 0.2,
+  ),
+  CircleConfig(
+    left: 60,
+    top: 250,
+    size: 60,
+    color: Color(0xFFEDE4C6), // Yellow
+    opacity: 0.25,
+  ),
+  // Adding a few more subtle circles for better framing
+  CircleConfig(
+    right: 70,
+    top: 300,
+    size: 45,
+    color: Color(0xFFD8DAC5), // Green
+    opacity: 0.2,
+  ),
+  CircleConfig(
+    left: 45,
+    bottom: 200,
+    size: 55,
+    color: Color(0xFFEFD4E2), // Pink
+    opacity: 0.15,
+  ),
+];
+
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
@@ -90,6 +165,10 @@ class _LoginViewState extends State<LoginView> {
         } else {
           setState(() {
             _errorMessage = result.message;
+            // Show additional help if username not found
+            if (result.message.contains("Username not found")) {
+              _errorMessage = "${result.message}\n\nTip: Check your spelling or create a new account if you haven't already.";
+            }
           });
         }
       }
@@ -123,11 +202,8 @@ class _LoginViewState extends State<LoginView> {
       }
       
       if (hasMomStage) {
-        // Returning user who has completed mother stage - go to challenges
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ChallengesView(isMismatch: false)),
-        );
+        // Returning user - navigate directly to dashboard
+        Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
         // New user who needs to complete mother stage selection
         Navigator.pushReplacement(
@@ -142,7 +218,22 @@ class _LoginViewState extends State<LoginView> {
     setState(() {
       _isSignUp = !_isSignUp;
       _errorMessage = null;
+      
+      // Show helpful message when switching to sign-in
+      if (!_isSignUp) {
+        _showInfoMessage("Enter your username and password to sign in");
+      }
     });
+  }
+
+  void _showInfoMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF574F4E),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -150,53 +241,74 @@ class _LoginViewState extends State<LoginView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF2EDE7),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Container(
-              width: 340,
-              constraints: const BoxConstraints(maxHeight: 500),
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF2EDE7),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color.fromRGBO(0, 0, 0, 0.1),
-                    offset: Offset(0, 4),
-                    blurRadius: 12,
-                  ),
-                ],
+        child: Stack(
+          children: [
+            // Decorative circles
+            ...decorativeCircles.map((circle) => Positioned(
+              left: circle.left,
+              right: circle.right,
+              top: circle.top,
+              bottom: circle.bottom,
+              child: Container(
+                width: circle.size,
+                height: circle.size,
+                decoration: BoxDecoration(
+                  color: circle.color.withOpacity(circle.opacity),
+                  shape: BoxShape.circle,
+                ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header (without close button)
-                  _buildHeader(),
-                  
-                  // Toggle buttons (Sign Up / Sign In)
-                  _buildToggleButtons(),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Form fields
-                  _buildForm(),
-                  
-                  // Remember me checkbox
-                  _buildRememberMe(),
-                  
-                  // Error message
-                  if (_errorMessage != null) _buildErrorMessage(),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Submit button
-                  _buildSubmitButton(),
-                  
-                  const SizedBox(height: 30),
-                ],
+            )),
+            
+            // Main content
+            Center(
+              child: SingleChildScrollView(
+                child: Container(
+                  width: 340,
+                  constraints: const BoxConstraints(maxHeight: 500),
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2EDE7).withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color.fromRGBO(0, 0, 0, 0.1),
+                        offset: Offset(0, 4),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header (without close button)
+                      _buildHeader(),
+                      
+                      // Toggle buttons (Sign Up / Sign In)
+                      _buildToggleButtons(),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Form fields
+                      _buildForm(),
+                      
+                      // Remember me checkbox
+                      _buildRememberMe(),
+                      
+                      // Error message
+                      if (_errorMessage != null) _buildErrorMessage(),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Submit button
+                      _buildSubmitButton(),
+                      
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -420,7 +532,7 @@ class _LoginViewState extends State<LoginView> {
           ),
           const SizedBox(width: 10),
           Text(
-            "Remember me",
+            "Keep me signed in",
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: const Color(0xFF574F4E),

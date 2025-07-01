@@ -112,23 +112,40 @@ class _DashboardViewState extends State<DashboardView> {
               builder: (context, constraints) {
                 final screenHeight = constraints.maxHeight;
                 final screenWidth = constraints.maxWidth;
-                final scaleFactor = screenWidth / 393.0;
+
+                // Limit content width on large screens and center it
+                const double baseWidth = 393.0;
+                const double maxContentWidth = 500.0;
+                final bool isMobileWidth = screenWidth <= maxContentWidth;
+                final double contentWidth = isMobileWidth ? screenWidth : baseWidth;
+                final double scaleFactor = contentWidth / baseWidth;
+                final double horizontalPadding = isMobileWidth ? 0.0 : (screenWidth - contentWidth) / 2;
                 
-                return Stack(
-                  children: [
-                    // Header section (fixed at top)
-                    _buildHeader(scaleFactor, viewModel),
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: SizedBox(
+                    width: contentWidth,
+                    height: screenHeight,
+                    child: Stack(
+                      children: [
+                        // Header section (fixed at top)
+                        _buildHeader(scaleFactor, viewModel),
 
-                    // Scrollable content area with connections
-                    _buildConnectionsArea(
-                      scaleFactor, 
-                      screenHeight, 
-                      viewModel,
+                        // User info top-left
+                        _buildUserInfoDisplay(scaleFactor, viewModel),
+
+                        // Scrollable content area with connections
+                        _buildConnectionsArea(
+                          scaleFactor,
+                          screenHeight,
+                          viewModel,
+                        ),
+
+                        // Bottom button (fixed)
+                        _buildBottomButton(scaleFactor, viewModel),
+                      ],
                     ),
-
-                    // Bottom button (fixed)
-                    _buildBottomButton(scaleFactor, viewModel),
-                  ],
+                  ),
                 );
               },
             );
@@ -149,17 +166,6 @@ class _DashboardViewState extends State<DashboardView> {
           // This would be a small settings icon in the top-right corner that opens a profile edit screen
           
           // Welcome message with username
-          Text(
-            'welcome back, ${viewModel.username}',
-            style: GoogleFonts.poppins(
-              fontSize: 16 * scaleFactor,
-              fontWeight: FontWeight.w400,
-              color: const Color(0xFF777673),
-              height: 1.35,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 8 * scaleFactor),
           Text(
             'this is your homebase',
             style: GoogleFonts.poppins(
@@ -186,14 +192,43 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
+  Widget _buildUserInfoDisplay(double scaleFactor, DashboardViewModel viewModel) {
+    return Positioned(
+      top: 8 * scaleFactor,
+      left: 16 * scaleFactor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'username: ${viewModel.username}',
+            style: GoogleFonts.poppins(
+              fontSize: 10 * scaleFactor,
+              fontWeight: FontWeight.w400,
+              color: const Color(0xFF494949),
+            ),
+          ),
+          SizedBox(height: 4 * scaleFactor),
+          Text(
+            'insta: realconnection.com_',
+            style: GoogleFonts.poppins(
+              fontSize: 10 * scaleFactor,
+              fontWeight: FontWeight.w400,
+              color: const Color(0xFF494949),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildConnectionsArea(
     double scaleFactor, 
     double screenHeight, 
     DashboardViewModel viewModel,
   ) {
     return Positioned.fill(
-      top: 200 * scaleFactor,
-      bottom: 130 * scaleFactor,
+      top: 150 * scaleFactor,
+      bottom: 100 * scaleFactor,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(
@@ -473,13 +508,13 @@ class _DashboardViewState extends State<DashboardView> {
                         print("DEBUG: Navigation to LoadingView initiated");
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9B7B5F),
-                  foregroundColor: Colors.white,
+                  backgroundColor: const Color(0xFFD9D6D3),
+                  foregroundColor: const Color(0xFF494949),
                   padding: EdgeInsets.symmetric(vertical: 16 * scaleFactor),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: BorderRadius.circular(29),
                   ),
-                  elevation: 4,
+                  elevation: 0,
                 ),
                 child: viewModel.isMatching
                     ? SizedBox(
@@ -491,10 +526,12 @@ class _DashboardViewState extends State<DashboardView> {
                         ),
                       )
                     : Text(
-                        'find new connection',
-                        style: GoogleFonts.poppins(
+                        'find new connection :)',
+                        style: TextStyle(
+                          fontFamily: 'Satoshi',
                           fontSize: 16 * scaleFactor,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF494949),
                         ),
                       ),
               ),

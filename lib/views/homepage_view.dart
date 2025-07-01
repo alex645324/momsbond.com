@@ -3,6 +3,81 @@ import 'package:provider/provider.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import 'login_view.dart';
 
+// Circle configuration class for decorative elements
+class CircleConfig {
+  final double? left;
+  final double? right;
+  final double? top;
+  final double? bottom;
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const CircleConfig({
+    this.left,
+    this.right,
+    this.top,
+    this.bottom,
+    required this.size,
+    required this.color,
+    this.opacity = 0.3,
+  });
+}
+
+// Circle configurations for decorative background
+const decorativeCircles = [
+  CircleConfig(
+    left: 30,
+    top: 60,
+    size: 100,
+    color: Color(0xFFEFD4E2), // Pink
+    opacity: 0.25,
+  ),
+  CircleConfig(
+    right: 40,
+    top: 150,
+    size: 80,
+    color: Color(0xFFEDE4C6), // Yellow
+    opacity: 0.2,
+  ),
+  CircleConfig(
+    left: 50,
+    top: 280,
+    size: 60,
+    color: Color(0xFFD8DAC5), // Green
+    opacity: 0.25,
+  ),
+  CircleConfig(
+    right: 20,
+    bottom: 200,
+    size: 90,
+    color: Color(0xFFEFD4E2), // Pink
+    opacity: 0.2,
+  ),
+  CircleConfig(
+    left: 40,
+    bottom: 150,
+    size: 70,
+    color: Color(0xFFEDE4C6), // Yellow
+    opacity: 0.25,
+  ),
+  // Additional circles for better framing
+  CircleConfig(
+    right: 60,
+    bottom: 300,
+    size: 50,
+    color: Color(0xFFD8DAC5), // Green
+    opacity: 0.2,
+  ),
+  CircleConfig(
+    left: 70,
+    bottom: 250,
+    size: 45,
+    color: Color(0xFFEFD4E2), // Pink
+    opacity: 0.15,
+  ),
+];
+
 class HomepageView extends StatefulWidget {
   const HomepageView({super.key});
 
@@ -59,6 +134,22 @@ class _HomepageViewState extends State<HomepageView> {
           body: SafeArea(
             child: Stack(
               children: [
+                // Decorative circles
+                ...decorativeCircles.map((circle) => Positioned(
+                  left: circle.left,
+                  right: circle.right,
+                  top: circle.top,
+                  bottom: circle.bottom,
+                  child: Container(
+                    width: circle.size,
+                    height: circle.size,
+                    decoration: BoxDecoration(
+                      color: circle.color.withOpacity(circle.opacity),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                )),
+
                 // Mother image
                 Positioned(
                   top: 128,

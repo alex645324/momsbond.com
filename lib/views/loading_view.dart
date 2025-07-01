@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../viewmodels/loading_viewmodel.dart';
+import 'dashboard_view.dart';
 
 class LoadingView extends StatefulWidget {
   const LoadingView({Key? key}) : super(key: key);
@@ -297,68 +298,80 @@ class _LoadingViewState extends State<LoadingView> with SingleTickerProviderStat
               builder: (context, constraints) {
                 final screenHeight = constraints.maxHeight;
                 final screenWidth = constraints.maxWidth;
-                final scaleFactor = screenWidth / 393.0;
+                final isDesktop = screenWidth > 1024;
+                final isTablet = screenWidth > 768 && screenWidth <= 1024;
+                final isMobile = screenWidth <= 768;
+                
+                // Calculate responsive sizes
+                final baseScaleFactor = screenWidth / 393.0;
+                final scaleFactor = isDesktop ? baseScaleFactor * 0.7 : baseScaleFactor;
+                final horizontalPadding = isDesktop ? screenWidth * 0.2 : 
+                                       isTablet ? screenWidth * 0.15 : 
+                                       screenWidth * 0.08;
+                
+                // Text sizes
+                final titleSize = isDesktop ? 32.0 : 
+                                isTablet ? 28.0 : 
+                                20.0 * scaleFactor;
+                final subtitleSize = isDesktop ? 16.0 : 
+                                   isTablet ? 14.0 : 
+                                   12.0 * scaleFactor;
+                
+                // Animation sizes
+                final baseCircleSize = isDesktop ? 60.0 : 
+                                     isTablet ? 50.0 : 
+                                     40.0 * scaleFactor;
                 
                 return Stack(
                   fit: StackFit.expand,
                   children: [
                     // Centered text
                     Positioned(
-                      top: screenHeight * 0.15,
+                      top: screenHeight * (isDesktop ? 0.25 : 0.15),
                       left: 0,
                       right: 0,
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20 * scaleFactor),
-                        child: Text(
-                          viewModel.loadingText,
-                          style: GoogleFonts.poppins(
-                            fontSize: 20 * scaleFactor,
-                            fontWeight: FontWeight.w500,
-                            color: const Color(0xFF494949),
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
+                        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                        child: Column(
+                          children: [
+                            Text(
+                              viewModel.loadingText,
+                              style: GoogleFonts.poppins(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF494949),
+                                height: 1.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
                     ),
-
-                    // Status indicator (optional - shows when waiting)
-                    if (viewModel.isWaiting)
-                      Positioned(
-                        top: screenHeight * 0.25,
-                        left: 0,
-                        right: 0,
-                        child: Text(
-                          "waiting for match...",
-                          style: GoogleFonts.poppins(
-                            fontSize: 14 * scaleFactor,
-                            fontWeight: FontWeight.w300,
-                            color: const Color(0xFF494949).withOpacity(0.7),
-                            height: 1.2,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
 
                     // Bouncing circle with ripple effect
                     AnimatedBuilder(
                       animation: _controller,
                       builder: (context, child) {
-                        final baseSize = 40 * scaleFactor;
-                        final currentSize = baseSize * _sizeAnimation.value;
+                        final currentSize = baseCircleSize * _sizeAnimation.value;
+                        final bounceHeight = isDesktop ? 150.0 : 
+                                          isTablet ? 120.0 : 
+                                          100.0 * scaleFactor;
                         
                         return Positioned(
                           left: _horizontalAnimation.value * screenWidth,
-                          bottom: screenHeight * 0.35 + _startingOffset + (100 * scaleFactor * _bounceAnimation.value),
+                          bottom: screenHeight * (isDesktop ? 0.4 : 0.35) + 
+                                 _startingOffset + 
+                                 (bounceHeight * _bounceAnimation.value),
                           child: Container(
                             width: currentSize,
                             height: currentSize,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: _colorAnimation.value?.withValues(alpha: 0.75) ?? Colors.transparent,
+                              color: _colorAnimation.value?.withOpacity(0.75) ?? Colors.transparent,
                               boxShadow: [
                                 BoxShadow(
-                                  color: (_colorAnimation.value ?? Colors.transparent).withValues(alpha: 0.2),
+                                  color: (_colorAnimation.value ?? Colors.transparent).withOpacity(0.2),
                                   blurRadius: 12 + (_sizeAnimation.value * 8),
                                   offset: const Offset(0, 6),
                                 ),
@@ -367,6 +380,28 @@ class _LoadingViewState extends State<LoadingView> with SingleTickerProviderStat
                           ),
                         );
                       },
+                    ),
+
+                    // Skip to dashboard button (subtle)
+                    Positioned(
+                      top: 10 * scaleFactor,
+                      right: 10 * scaleFactor,
+                      child: Opacity(
+                        opacity: 0.6,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          iconSize: isDesktop ? 28 : (isTablet ? 24 : 20 * scaleFactor),
+                          icon: const Icon(Icons.close),
+                          color: const Color(0xFF494949),
+                          tooltip: 'Go to dashboard',
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const DashboardView()),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ],
                 );

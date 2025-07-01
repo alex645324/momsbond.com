@@ -16,7 +16,7 @@ class LoadingModel {
     this.userData,
     this.matchData,
     this.hasMatch = false,
-    this.loadingText = "finding someone\nwho understands you.",
+    this.loadingText = "finding someone\nwho understands you",
   });
 
   LoadingModel copyWith({

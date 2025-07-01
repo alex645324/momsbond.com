@@ -15,6 +15,7 @@ class DashboardViewModel extends ChangeNotifier {
   
   // Stream subscription
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
+  Timer? _refreshTimer;  // Add timer for periodic updates
 
   DashboardModel get dashboardModel => _dashboardModel;
   bool get isLoading => _dashboardModel.isLoading;
@@ -51,6 +52,11 @@ class DashboardViewModel extends ChangeNotifier {
       
       // Set up real-time listener for user status
       _setupUserStatusListener();
+      
+      // Set up periodic refresh timer (every 30 seconds)
+      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        _refreshConnections();
+      });
       
       _updateState(_dashboardModel.copyWith(isLoading: false));
       print("DashboardViewModel: Initialization complete");
@@ -106,6 +112,12 @@ class DashboardViewModel extends ChangeNotifier {
       }
 
       final userData = userDoc.data() as Map<String, dynamic>;
+      
+      // Update the dashboard username once (if not already set or changed)
+      final fetchedUsername = userData['username'] ?? 'User';
+      if (fetchedUsername != _dashboardModel.username) {
+        _updateState(_dashboardModel.copyWith(username: fetchedUsername));
+      }
       
       // Handle momStage as List<String> since that's how it's stored in Firestore
       List<String> userStages = [];
@@ -688,6 +700,7 @@ class DashboardViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _userSubscription?.cancel();
+    _refreshTimer?.cancel();  // Cancel timer on dispose
     super.dispose();
   }
 
@@ -979,6 +992,24 @@ class DashboardViewModel extends ChangeNotifier {
       print("DashboardViewModel: Cleaned up ${oldReconnectionMatches.docs.length} old temporary reconnection matches");
     } catch (e) {
       print("DashboardViewModel: Error cleaning up old temporary reconnection matches: $e");
+    }
+  }
+
+  Future<void> _refreshConnections() async {
+    try {
+      // Update user's active status
+      final userId = _authManager.getUserId();
+      if (userId == null) return;
+
+      await _firestore.collection('users').doc(userId).update({
+        'lastActiveTimestamp': FieldValue.serverTimestamp(),
+      });
+
+      // Reload connections to get updated strengths
+      await _loadConnections();
+      print("DashboardViewModel: Refreshed connections");
+    } catch (e) {
+      print("DashboardViewModel: Error refreshing connections: $e");
     }
   }
 } 

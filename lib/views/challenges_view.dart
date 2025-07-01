@@ -3,17 +3,47 @@ import 'package:provider/provider.dart';
 import '../viewmodels/challenges_viewmodel.dart';
 import '../models/challenges_model.dart';
 
-// Circle configurations for decorative background
-const circle1 = CircleConfig(left: -26, top: -27, width: 66, height: 66);
-const circle2 = CircleConfig(right: 34, top: 161, width: 38, height: 38);
-const circle3 = CircleConfig(right: 15, top: 241, width: 13, height: 13);
-const circle4 = CircleConfig(right: 9, top: 363, width: 26, height: 26);
-const circle5 = CircleConfig(left: 147, top: 440, width: 12, height: 12);
-const circle6 = CircleConfig(left: -26, top: 518, width: 83, height: 85);
-const circle7 = CircleConfig(right: 80, top: 50, width: 15, height: 15, opacity: 0.3);
-const circle8 = CircleConfig(left: 60, top: 200, width: 20, height: 20, opacity: 0.25);
-const circle9 = CircleConfig(right: -10, bottom: 200, width: 45, height: 45, opacity: 0.3);
-const circle10 = CircleConfig(left: 30, bottom: 150, width: 18, height: 18, opacity: 0.35);
+// Circle configurations for decorative background - Mobile
+const mobileCircles = [
+  CircleConfig(left: 20, top: 30, width: 50, height: 50, opacity: 0.3),
+  CircleConfig(right: 40, top: 120, width: 57, height: 57, opacity: 0.35),
+  CircleConfig(left: 35, bottom: 160, width: 70, height: 70, opacity: 0.3),
+  CircleConfig(right: 25, bottom: 80, width: 90, height: 90, opacity: 0.25),
+  CircleConfig(right: 60, bottom: 320, width: 40, height: 40, opacity: 0.35),
+  CircleConfig(left: 45, top: 250, width: 35, height: 35, opacity: 0.3),
+];
+
+// Circle configurations for decorative background - Desktop
+const desktopCircles = [
+  CircleConfig(left: -60, top: -80, width: 240, height: 240, opacity: 0.12),
+  CircleConfig(right: -40, top: 120, width: 180, height: 180, opacity: 0.1),
+  CircleConfig(left: -20, top: 380, width: 100, height: 100, opacity: 0.15),
+  CircleConfig(right: -80, top: 420, width: 160, height: 160, opacity: 0.08),
+  CircleConfig(left: -100, bottom: 60, width: 200, height: 200, opacity: 0.1),
+  CircleConfig(right: -120, bottom: -100, width: 280, height: 280, opacity: 0.12),
+  CircleConfig(right: 60, top: 280, width: 50, height: 50, opacity: 0.2),
+  CircleConfig(left: 40, bottom: 240, width: 40, height: 40, opacity: 0.18),
+];
+
+class CircleConfig {
+  final double? left;
+  final double? right;
+  final double? top;
+  final double? bottom;
+  final double width;
+  final double height;
+  final double opacity;
+
+  const CircleConfig({
+    this.left,
+    this.right,
+    this.top,
+    this.bottom,
+    required this.width,
+    required this.height,
+    this.opacity = 0.4,
+  });
+}
 
 class ChallengesView extends StatefulWidget {
   final bool isMismatch;
@@ -30,26 +60,22 @@ class ChallengesView extends StatefulWidget {
 }
 
 class _ChallengesViewState extends State<ChallengesView> {
-  late ChallengesViewModel _viewModel;
+  late final ChallengesViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _viewModel = Provider.of<ChallengesViewModel>(context, listen: false);
-      _viewModel.initialize(widget.isMismatch, startingSet: widget.startingSet);
-    });
+    // Create a single instance and pass initial parameters once.
+    _viewModel = ChallengesViewModel();
+    _viewModel.initialize(widget.isMismatch, startingSet: widget.startingSet);
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ChallengesViewModel(),
+    return ChangeNotifierProvider.value(
+      value: _viewModel,
       child: Consumer<ChallengesViewModel>(
         builder: (context, challengesViewModel, child) {
-          // Initialize viewModel reference
-          _viewModel = challengesViewModel;
-          
           // Handle error messages
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (challengesViewModel.errorMessage != null) {
@@ -62,7 +88,7 @@ class _ChallengesViewState extends State<ChallengesView> {
             canPop: true,
             onPopInvokedWithResult: (didPop, result) async {
               if (didPop) {
-                await challengesViewModel.cleanup();
+                await _viewModel.cleanup();
               }
             },
             child: Scaffold(
@@ -111,16 +137,15 @@ class ResponsiveChallengesLayout extends StatelessWidget {
     double getResponsiveSize(double mobileSize) => mobileSize * scaleFactor;
 
     if (isDesktop) {
-      return Center(
-        child: Container(
-          width: 400,
-          child: buildMainContent(
+      return Stack(
+        children: [
+          buildMainContent(
             context,
             (left) => left,
             (top) => top,
             getResponsiveSize,
           ),
-        ),
+        ],
       );
     } else {
       return buildMainContent(
@@ -133,10 +158,8 @@ class ResponsiveChallengesLayout extends StatelessWidget {
   }
 
   List<Widget> buildBackgroundCircles(double Function(double) getSize) {
-    return [
-      for (var circle in [circle1, circle2, circle3, circle4, circle5, circle6, circle7, circle8, circle9, circle10])
-        _buildCircle(circle, getSize),
-    ];
+    final circles = isDesktop ? desktopCircles : mobileCircles;
+    return circles.map((config) => _buildCircle(config, getSize)).toList();
   }
 
   Widget _buildCircle(CircleConfig config, double Function(double) getSize) {
@@ -162,6 +185,12 @@ class ResponsiveChallengesLayout extends StatelessWidget {
     double Function(double) getTop,
     double Function(double) getSize,
   ) {
+    final horizontalPadding = isDesktop ? screenWidth * 0.08 : screenWidth * 0.04;
+    final verticalPadding = isDesktop ? screenHeight * 0.08 : screenHeight * 0.04;
+    final titleFontSize = isDesktop ? 32.0 : 20.0;
+    final subtitleFontSize = isDesktop ? 16.0 : 11.0;
+    final buttonHeight = isDesktop ? screenHeight * 0.12 : 65.0;
+
     return Stack(
       children: [
         // Background circles
@@ -169,12 +198,13 @@ class ResponsiveChallengesLayout extends StatelessWidget {
         
         SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: getSize(32)),
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: getSize(80)),
-                
                 // Progress indicator
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -192,8 +222,8 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                   challengesViewModel.currentSetTitle,
                   style: TextStyle(
                     fontFamily: "Poppins",
-                    fontWeight: FontWeight.w600,
-                    fontSize: getSize(16),
+                    fontWeight: FontWeight.w500,
+                    fontSize: subtitleFontSize,
                     color: const Color(0xFF777673),
                     height: 1.5,
                   ),
@@ -207,36 +237,26 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                   "what kinds of challenges\nhave you encountered?",
                   style: TextStyle(
                     fontFamily: "Poppins",
-                    fontWeight: FontWeight.w600,
-                    fontSize: getSize(20),
+                    fontWeight: FontWeight.w500,
+                    fontSize: titleFontSize,
                     color: const Color(0xFF494949),
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
 
-                SizedBox(height: getSize(50)),
+                SizedBox(height: isDesktop ? screenHeight * 0.1 : screenHeight * 0.06),
 
                 // Dynamic challenge buttons based on current set
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: getSize(20)),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isDesktop ? screenWidth * 0.15 : getSize(20)
+                    ),
                     child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < challengesViewModel.currentAvailableQuestions.length; i++) ...[
-                            Align(
-                              alignment: challengesViewModel.currentAvailableQuestions[i].alignment,
-                              child: buildChallengeButton(
-                                getSize,
-                                challengesViewModel.currentAvailableQuestions[i],
-                              ),
-                            ),
-                            if (i < challengesViewModel.currentAvailableQuestions.length - 1)
-                              SizedBox(height: getSize(20)),
-                          ],
-                        ],
-                      ),
+                      child: isMobile 
+                          ? buildMobileLayout(getSize, buttonHeight)
+                          : buildDesktopLayout(getSize, buttonHeight),
                     ),
                   ),
                 ),
@@ -245,7 +265,10 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Padding(
-                    padding: EdgeInsets.only(bottom: getSize(60), right: getSize(20)),
+                    padding: EdgeInsets.only(
+                      bottom: verticalPadding * 0.5,
+                      right: isDesktop ? 0 : getSize(20)
+                    ),
                     child: buildNavigationControl(context, getSize),
                   ),
                 ),
@@ -253,6 +276,114 @@ class ResponsiveChallengesLayout extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget buildMobileLayout(double Function(double) getSize, double buttonHeight) {
+    return Column(
+      children: [
+        for (var i = 0; i < challengesViewModel.currentAvailableQuestions.length; i++) ...[
+          Row(
+            children: [
+              const Spacer(),
+              Expanded(
+                flex: 3,
+                child: Container(
+                  height: buttonHeight,
+                  child: buildChallengeButton(
+                    getSize,
+                    challengesViewModel.currentAvailableQuestions[i],
+                  ),
+                ),
+              ),
+              const Spacer(),
+            ],
+          ),
+          if (i < challengesViewModel.currentAvailableQuestions.length - 1)
+            SizedBox(height: getSize(20)),
+        ],
+        SizedBox(height: getSize(40)),
+      ],
+    );
+  }
+
+  Widget buildDesktopLayout(double Function(double) getSize, double buttonHeight) {
+    final questions = challengesViewModel.currentAvailableQuestions;
+    final hasThreeOptions = questions.length == 3;
+    final rows = hasThreeOptions ? 2 : (questions.length / 2).ceil();
+
+    return Column(
+      children: [
+        // First row (always two items)
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: buttonHeight,
+                child: buildChallengeButton(
+                  getSize,
+                  questions[0],
+                ),
+              ),
+            ),
+            SizedBox(width: getSize(20)),
+            Expanded(
+              child: Container(
+                height: buttonHeight,
+                child: buildChallengeButton(
+                  getSize,
+                  questions[1],
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: getSize(20)),
+        
+        // Second row (centered if three options)
+        if (hasThreeOptions)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.15),
+            child: Container(
+              height: buttonHeight,
+              child: buildChallengeButton(
+                getSize,
+                questions[2],
+              ),
+            ),
+          )
+        else
+          for (var row = 1; row < rows; row++) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: buttonHeight,
+                    child: buildChallengeButton(
+                      getSize,
+                      questions[row * 2],
+                    ),
+                  ),
+                ),
+                SizedBox(width: getSize(20)),
+                Expanded(
+                  child: row * 2 + 1 < questions.length
+                      ? Container(
+                          height: buttonHeight,
+                          child: buildChallengeButton(
+                            getSize,
+                            questions[row * 2 + 1],
+                          ),
+                        )
+                      : Container(), // Empty container for alignment
+                ),
+              ],
+            ),
+            if (row < rows - 1) SizedBox(height: getSize(20)),
+          ],
+        
+        SizedBox(height: getSize(40)),
       ],
     );
   }
@@ -275,43 +406,62 @@ class ResponsiveChallengesLayout extends StatelessWidget {
     ChallengeQuestion question,
   ) {
     final isSelected = challengesViewModel.isQuestionSelected(question.id);
+    bool _isHovered = false;
+    final buttonTextSize = isDesktop ? 16.0 : 11.0;
+    final verticalPadding = isDesktop ? getSize(16) : getSize(8);
+    final horizontalPadding = isDesktop ? getSize(24) : getSize(16);
     
-    return GestureDetector(
-      onTap: challengesViewModel.isLoading ? null : () => challengesViewModel.toggleQuestion(question.id),
-      child: Container(
-        width: getSize(question.width),
-        height: getSize(question.height),
-        decoration: BoxDecoration(
-          color: question.backgroundColor,
-          borderRadius: BorderRadius.circular(getSize(35)),
-          border: isSelected 
-              ? Border.all(color: const Color(0xFF494949), width: 2)
-              : Border.all(color: Colors.transparent, width: 2),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF494949).withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+    return StatefulBuilder(
+      builder: (context, setState) => MouseRegion(
+        onEnter: isDesktop ? (_) => setState(() => _isHovered = true) : null,
+        onExit: isDesktop ? (_) => setState(() => _isHovered = false) : null,
+        child: GestureDetector(
+          onTap: challengesViewModel.isLoading ? null : () => challengesViewModel.toggleQuestion(question.id),
+          child: PulseAnimationButton(
+            child: AnimatedScale(
+              scale: _isHovered && !challengesViewModel.isLoading ? 1.02 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: question.backgroundColor,
+                  borderRadius: BorderRadius.circular(isDesktop ? getSize(45) : getSize(35)),
+                  border: isSelected 
+                      ? Border.all(color: const Color(0xFF494949), width: 2)
+                      : Border.all(color: Colors.transparent, width: 2),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF494949).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: verticalPadding,
+                    ),
+                    child: Text(
+                      question.text,
+                      style: TextStyle(
+                        fontFamily: "Satoshi",
+                        fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                        fontSize: buttonTextSize,
+                        color: isSelected 
+                            ? const Color(0xFF494949)
+                            : const Color(0xFF494949).withOpacity(0.8),
+                        height: 1.35,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              question.text,
-              style: TextStyle(
-                fontFamily: "Satoshi",
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                fontSize: getSize(12),
-                color: isSelected 
-                    ? const Color(0xFF494949)
-                    : const Color(0xFF494949).withValues(alpha: 0.8),
-                height: 1.35,
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -320,122 +470,137 @@ class ResponsiveChallengesLayout extends StatelessWidget {
   }
 
   Widget buildNavigationControl(BuildContext context, double Function(double) getSize) {
-    return Container(
-      width: getSize(144),
-      height: getSize(66),
-      child: Stack(
-        children: [
-          // Background pill
-          Positioned(
-            top: getSize(11),
-            child: Container(
-              width: getSize(144),
-              height: getSize(44),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD9D9D9),
-                borderRadius: BorderRadius.circular(getSize(29)),
-              ),
-            ),
-          ),
-          
-          // Back arrow (left side)
-          Positioned(
-            left: getSize(6),
-            top: 0,
-            child: GestureDetector(
-              onTap: challengesViewModel.isLoading ? null : () => challengesViewModel.goBack(context),
-              child: Container(
-                width: getSize(66),
-                height: getSize(66),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(getSize(33)),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(getSize(33)),
-                  child: Transform.scale(
-                    scaleX: -1,
-                    child: Opacity(
-                      opacity: challengesViewModel.canGoBack || !challengesViewModel.isSet1 ? 1.0 : 0.54,
-                      child: Image.asset(
-                        "lib/assets/NavArrow.png",
-                        fit: BoxFit.cover,
-                      ),
+    final buttonSize = isDesktop ? screenWidth * 0.045 : screenWidth * 0.1;
+    final circleHeight = buttonSize * 0.64;
+    
+    return MouseRegion(
+      cursor: (!challengesViewModel.isLoading && challengesViewModel.canGoForward) 
+          ? SystemMouseCursors.click 
+          : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: (!challengesViewModel.isLoading && challengesViewModel.canGoForward)
+            ? () => challengesViewModel.goForward(context)
+            : null,
+        child: PulseAnimationButton(
+          child: Container(
+            width: buttonSize,
+            height: buttonSize,
+            child: Stack(
+              children: [
+                // Background circle
+                Positioned(
+                  top: buttonSize * 0.16,
+                  child: Container(
+                    width: buttonSize,
+                    height: circleHeight,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD9D9D9),
+                      borderRadius: BorderRadius.circular(buttonSize / 2),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
-
-          // Center divider
-          Positioned(
-            left: getSize(71),
-            top: getSize(18),
-            child: Container(
-              width: getSize(3),
-              height: getSize(30),
-              decoration: BoxDecoration(
-                color: const Color(0xFF919091).withValues(alpha: 0.38),
-                borderRadius: BorderRadius.circular(getSize(20)),
-              ),
-            ),
-          ),
-
-          // Forward arrow background (dynamic)
-          if (challengesViewModel.canGoForward && !challengesViewModel.isLoading)
-            Positioned(
-              left: getSize(73),
-              top: getSize(11),
-              child: Container(
-                width: getSize(70),
-                height: getSize(44),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF494949),
-                  borderRadius: BorderRadius.circular(getSize(29)),
-                ),
-              ),
-            ),
-
-          // Forward arrow (right side)
-          Positioned(
-            left: getSize(73),
-            top: 0,
-            child: GestureDetector(
-              onTap: challengesViewModel.canGoForward && !challengesViewModel.isLoading 
-                  ? () => challengesViewModel.goForward(context)
-                  : null,
-              child: Container(
-                width: getSize(66),
-                height: getSize(66),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(getSize(33)),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(getSize(33)),
-                  child: challengesViewModel.isLoading
-                      ? const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                // Arrow or loading indicator
+                Positioned(
+                  left: buttonSize * 0.03,
+                  top: 0,
+                  child: Container(
+                    width: buttonSize * 0.96,
+                    height: buttonSize,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(buttonSize / 2),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(buttonSize / 2),
+                      child: challengesViewModel.isLoading
+                          ? Center(
+                              child: SizedBox(
+                                width: buttonSize * 0.3,
+                                height: buttonSize * 0.3,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                            )
+                          : Opacity(
+                              opacity: challengesViewModel.canGoForward ? 1.0 : 0.54,
+                              child: Image.asset(
+                                'lib/assets/NavArrow.png',
+                                fit: BoxFit.cover,
+                              ),
                             ),
-                          ),
-                        )
-                      : Opacity(
-                          opacity: challengesViewModel.canGoForward ? 1.0 : 0.54,
-                          child: Image.asset(
-                            "lib/assets/NavArrow.png",
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+class PulseAnimationButton extends StatefulWidget {
+  final Widget child;
+
+  const PulseAnimationButton({
+    Key? key,
+    required this.child,
+  }) : super(key: key);
+
+  @override
+  State<PulseAnimationButton> createState() => _PulseAnimationButtonState();
+}
+
+class _PulseAnimationButtonState extends State<PulseAnimationButton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _pulseAnimation;
+  bool _hasPlayed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _pulseAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.03), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.03, end: 0.98), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 0.98, end: 1.01), weight: 20),
+      TweenSequenceItem(tween: Tween(begin: 1.01, end: 1.0), weight: 20),
+    ]).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutSine,
+    ));
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted && !_hasPlayed) {
+        _controller.forward().then((_) {
+          _hasPlayed = true;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _pulseAnimation.value,
+          child: widget.child,
+        );
+      },
     );
   }
 } 

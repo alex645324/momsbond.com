@@ -125,7 +125,7 @@ class ChallengesModel {
     return allQuestions.firstWhere((q) => q.id == questionId).dbValue;
   }
 
-  String get currentSetTitle => "Question set $currentSet";
+  String get currentSetTitle => "";
   
   // Navigation state
   bool get canGoBack => currentSet == 2;  // Can go back from set 2 to set 1

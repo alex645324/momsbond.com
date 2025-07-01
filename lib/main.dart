@@ -133,10 +133,10 @@ class _AppInitializerState extends State<AppInitializer> {
           }
           
           if (hasMomStage) {
-            // Returning user who has completed mother stage but not questions
+            // Returning user - send directly to dashboard
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
-                Navigator.pushReplacementNamed(context, '/challenges');
+                Navigator.pushReplacementNamed(context, '/dashboard');
               }
             });
           } else {

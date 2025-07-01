@@ -148,67 +148,77 @@ class _MessagesViewState extends State<MessagesView> {
           builder: (context, constraints) {
             final screenHeight = constraints.maxHeight;
             final screenWidth = constraints.maxWidth;
-            final scaleFactor = screenWidth / 393.0;
+            // Treat screens wider than 500 px as "large" and keep the design at its phone baseline width.
+            const double baseWidth = 393.0;
+            const double maxContentWidth = 500.0; // optional cap for tablets/desktops
+            final bool isMobileWidth = screenWidth <= maxContentWidth;
+            final double contentWidth = isMobileWidth ? screenWidth : baseWidth;
+            final double scaleFactor = contentWidth / baseWidth; // Never larger than 1 on big screens
+            final horizontalPadding = isMobileWidth ? 0.0 : (screenWidth - contentWidth) / 2;
+            final bottomInset = MediaQuery.of(context).viewInsets.bottom;
             
-            return Container(
-              width: screenWidth,
-              height: screenHeight,
-              child: Stack(
-                children: [
-                  // Chat messages area
-                  Positioned(
-                    left: 20,
-                    right: 20,
-                    top: 120 * scaleFactor,
-                    bottom: 140 * scaleFactor,
-                    child: _buildMessagesArea(viewModel, scaleFactor),
-                  ),
-
-                  // Timer display (top center)
-                  if (viewModel.isConversationActive)
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Container(
+                width: contentWidth,
+                height: screenHeight,
+                child: Stack(
+                  children: [
+                    // Chat messages area
                     Positioned(
-                      top: 40 * scaleFactor,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16 * scaleFactor,
-                            vertical: 8 * scaleFactor,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE6E3E0),
-                            borderRadius: BorderRadius.circular(20 * scaleFactor),
-                          ),
-                          child: Text(
-                            viewModel.timerDisplay,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14 * scaleFactor,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF494949),
+                      left: 20,
+                      right: 20,
+                      top: 120 * scaleFactor,
+                      bottom: 140 * scaleFactor + bottomInset,
+                      child: _buildMessagesArea(viewModel, scaleFactor),
+                    ),
+
+                    // Timer display (top center)
+                    if (viewModel.isConversationActive)
+                      Positioned(
+                        top: 40 * scaleFactor,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: AnimatedOpacity(
+                            opacity: viewModel.messagesModel.remainingSeconds <= 10 ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16 * scaleFactor,
+                                vertical: 8 * scaleFactor,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE6E3E0),
+                                borderRadius: BorderRadius.circular(20 * scaleFactor),
+                              ),
+                              child: Text(
+                                viewModel.timerDisplay,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14 * scaleFactor,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF494949),
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
 
+                    // Input field at bottom
+                    if (viewModel.isConversationActive)
+                      Positioned(
+                        left: 20 * scaleFactor,
+                        right: 20 * scaleFactor,
+                        bottom: 20 * scaleFactor + bottomInset,
+                        child: _buildMessageInput(scaleFactor),
+                      ),
 
-
-
-                  
-                  // Input field at bottom
-                  if (viewModel.isConversationActive)
-                    Positioned(
-                      left: 79 * scaleFactor,
-                      right: 79 * scaleFactor,
-                      bottom: 66 * scaleFactor,
-                      child: _buildMessageInput(scaleFactor),
-                    ),
-
-                  // End overlay
-                  if (viewModel.showEndOverlay)
-                    _buildEndOverlay(viewModel, scaleFactor),
-                ],
+                    // End overlay
+                    if (viewModel.showEndOverlay)
+                      _buildEndOverlay(viewModel, scaleFactor),
+                  ],
+                ),
               ),
             );
           },
@@ -219,9 +229,32 @@ class _MessagesViewState extends State<MessagesView> {
 
   Widget _buildMessagesArea(MessagesViewModel viewModel, double scaleFactor) {
     if (viewModel.messages.isEmpty) {
+      // Determine a shared challenge topic between the two users, if any
+      String? topic;
+      final currentTopics = viewModel.messagesModel.currentUser.selectedQuestions;
+      final matchedTopics = viewModel.messagesModel.matchedUser.selectedQuestions;
+
+      // Try to find a shared challenge first
+      if (currentTopics.isNotEmpty && matchedTopics.isNotEmpty) {
+        for (final t in currentTopics) {
+          if (matchedTopics.contains(t)) {
+            topic = t;
+            break;
+          }
+        }
+      }
+
+      // If no shared topic, fall back to one the current user selected
+      topic ??= currentTopics.isNotEmpty ? currentTopics.first : null;
+
+      final starterText = topic != null && topic.isNotEmpty
+          ? 'your connection also struggles with \n"$topic"'
+          : 'Start your conversation...';
+
       return Center(
         child: Text(
-          'Start your conversation...',
+          starterText,
+          textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             fontSize: 16 * scaleFactor,
             fontWeight: FontWeight.w400,
@@ -255,18 +288,24 @@ class _MessagesViewState extends State<MessagesView> {
           if (!isCurrentUser) SizedBox(width: 45 * scaleFactor),
           Flexible(
             child: Container(
-              constraints: BoxConstraints(
-                maxWidth: 250 * scaleFactor,
-              ),
               padding: EdgeInsets.symmetric(
                 horizontal: 16 * scaleFactor,
                 vertical: 12 * scaleFactor,
               ),
               decoration: BoxDecoration(
                 color: isCurrentUser 
-                    ? const Color(0xFFDFE0E2) 
+                    ? const Color(0xFFDFE0E2)
                     : const Color(0xFFD9D9D9),
-                borderRadius: BorderRadius.circular(29 * scaleFactor),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16 * scaleFactor),
+                  topRight: Radius.circular(16 * scaleFactor),
+                  bottomLeft: Radius.circular(isCurrentUser ? 16 * scaleFactor : 4 * scaleFactor),
+                  bottomRight: Radius.circular(isCurrentUser ? 4 * scaleFactor : 16 * scaleFactor),
+                ),
+                border: Border.all(
+                  color: const Color(0xFFEAE7E2), // Match screen background
+                  width: 1,
+                ),
               ),
               child: Text(
                 message.text,
@@ -275,6 +314,8 @@ class _MessagesViewState extends State<MessagesView> {
                   fontWeight: FontWeight.w400,
                   color: const Color(0xFF494949),
                 ),
+                softWrap: true,
+                overflow: TextOverflow.visible,
               ),
             ),
           ),
@@ -286,17 +327,29 @@ class _MessagesViewState extends State<MessagesView> {
 
   Widget _buildMessageInput(double scaleFactor) {
     return Container(
-      height: 44 * scaleFactor,
+      constraints: BoxConstraints(
+        minHeight: 44 * scaleFactor,
+        maxHeight: 120 * scaleFactor,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFE6E3E0),
         borderRadius: BorderRadius.circular(29 * scaleFactor),
+        border: Border.all(
+          color: const Color(0xFFD9D9D9),
+          width: 1,
+        ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: TextField(
               controller: _messageController,
               onSubmitted: (_) => _sendMessage(),
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              maxLines: null, // allow unlimited lines
+              minLines: 1,
               style: GoogleFonts.poppins(
                 fontSize: 11 * scaleFactor,
                 color: const Color(0xFF494949),
@@ -308,27 +361,28 @@ class _MessagesViewState extends State<MessagesView> {
                   color: const Color(0xFF878787),
                 ),
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: 33 * scaleFactor,
+                  horizontal: 20 * scaleFactor,
                   vertical: 14 * scaleFactor,
                 ),
                 border: InputBorder.none,
+                isDense: true,
               ),
             ),
           ),
           GestureDetector(
             onTap: _sendMessage,
             child: Container(
-              width: 40 * scaleFactor,
-              height: 40 * scaleFactor,
-              margin: EdgeInsets.only(right: 2 * scaleFactor),
+              width: 32 * scaleFactor,
+              height: 32 * scaleFactor,
+              margin: EdgeInsets.only(right: 4 * scaleFactor, bottom: 4 * scaleFactor),
               decoration: BoxDecoration(
                 color: const Color(0xFF494949),
-                borderRadius: BorderRadius.circular(20 * scaleFactor),
+                borderRadius: BorderRadius.circular(16 * scaleFactor),
               ),
               child: Icon(
                 Icons.send,
                 color: Colors.white,
-                size: 16 * scaleFactor,
+                size: 14 * scaleFactor,
               ),
             ),
           ),
@@ -546,6 +600,4 @@ class _MessagesViewState extends State<MessagesView> {
       ],
     );
   }
-
-
 } 

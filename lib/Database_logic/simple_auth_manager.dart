@@ -69,12 +69,36 @@ class SimpleAuthManager {
         return SignUpResult(success: false, message: "Password must be at least 3 characters");
       }
 
-      // Get existing users
-      final users = await _getStoredUsers();
+      // COMPREHENSIVE USERNAME UNIQUENESS CHECK
+      // Check both local storage AND Firebase to prevent duplicates across devices
       
-      // Check if username already exists
+      // STEP 1: Check local storage first (fast check)
+      final users = await _getStoredUsers();
       if (users.containsKey(username.toLowerCase())) {
         return SignUpResult(success: false, message: "Username already exists");
+      }
+      
+      // STEP 2: Check Firebase for username uniqueness across all devices
+      try {
+        print("SimpleAuth: Checking username uniqueness in Firebase...");
+        
+        // Check for exact username match
+        final usernameQuery = await _firestore
+            .collection('users')
+            .where('username', isEqualTo: username)
+            .limit(1)
+            .get();
+        
+        if (usernameQuery.docs.isNotEmpty) {
+          print("SimpleAuth: Username '$username' already exists in Firebase");
+          return SignUpResult(success: false, message: "Username already exists");
+        }
+        
+        print("SimpleAuth: Username '$username' is unique - proceeding with account creation");
+      } catch (e) {
+        print("SimpleAuth: Error checking Firebase for username uniqueness: $e");
+        // For safety, if Firebase check fails, don't allow account creation
+        return SignUpResult(success: false, message: "Unable to verify username uniqueness. Please try again.");
       }
 
       // Create user ID and hash password
@@ -96,9 +120,9 @@ class SimpleAuthManager {
 
       await _saveUsers(users);
 
-      // SKIP Firestore creation for now to test if that's the bottleneck
-      // await _createFirestoreUser(userId, username);
-      print("SimpleAuth: SKIPPING Firestore user creation to test speed");
+      // Create user document in Firestore with password backup
+      await _createFirestoreUser(userId, username, hashedPassword);
+      print("SimpleAuth: User document created in Firestore with credential backup");
 
       // Sign in the user
       _currentUserId = userId;
@@ -130,26 +154,100 @@ class SimpleAuthManager {
         return SignInResult(success: false, message: "Username and password cannot be empty");
       }
 
-      // Get existing users
+      // STEP 1: Check local storage first
       final users = await _getStoredUsers();
       final userKey = username.toLowerCase();
       
-      if (!users.containsKey(userKey)) {
-        return SignInResult(success: false, message: "Username not found");
+      Map<String, dynamic>? userData;
+      String? storedHashedPassword;
+      String? userId;
+      String? originalUsername;
+      
+      if (users.containsKey(userKey)) {
+        // Found in local storage
+        userData = users[userKey];
+        if (userData != null) {
+          storedHashedPassword = userData['hashedPassword'] as String?;
+          userId = userData['userId'] as String?;
+          originalUsername = userData['username'] as String?;
+          print("SimpleAuth: Found user credentials in LOCAL STORAGE");
+        }
+      } else {
+        // STEP 2: Fallback to Firestore if not found locally
+        print("SimpleAuth: User not found locally, checking FIRESTORE BACKUP...");
+        try {
+          final querySnapshot = await _firestore
+              .collection('users')
+              .where('username', isEqualTo: username)
+              .limit(1)
+              .get()
+              .timeout(const Duration(seconds: 10));
+          
+          if (querySnapshot.docs.isNotEmpty) {
+            final doc = querySnapshot.docs.first;
+            final firestoreData = doc.data();
+            
+            if (firestoreData.containsKey('hashedPassword')) {
+              // Found credentials in Firestore
+              storedHashedPassword = firestoreData['hashedPassword'];
+              userId = doc.id;
+              originalUsername = firestoreData['username'];
+              
+              // Restore to local storage for future use
+              users[userKey] = {
+                'userId': userId,
+                'username': originalUsername,
+                'hashedPassword': storedHashedPassword,
+                'createdAt': firestoreData['createdAt']?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch,
+                'isWaiting': firestoreData['isWaiting'] ?? false,
+                'isInConversation': firestoreData['isInConversation'] ?? false,
+                'momStage': firestoreData['momStage'],
+                'questionSet1': firestoreData['questionSet1'],
+                'questionSet2': firestoreData['questionSet2'],
+              };
+              await _saveUsers(users);
+              print("SimpleAuth: Restored user credentials from FIRESTORE BACKUP to local storage");
+            }
+          }
+        } catch (e) {
+          print("SimpleAuth: Error checking Firestore backup: $e");
+        }
+        
+        if (storedHashedPassword == null) {
+          return SignInResult(success: false, message: "Username not found. Did you create an account with this username?");
+        }
       }
 
-      final userData = users[userKey];
-      final storedHashedPassword = userData['hashedPassword'];
+      // Verify password
       final hashedInputPassword = _hashPassword(password);
-
       if (storedHashedPassword != hashedInputPassword) {
         return SignInResult(success: false, message: "Incorrect password");
       }
 
       // Sign in successful
-      _currentUserId = userData['userId'];
-      _currentUsername = userData['username']; // Use original case
+      _currentUserId = userId;
+      _currentUsername = originalUsername; // Use original case
       _isAuthenticated = true;
+
+      // Ensure Firestore document exists with password backup (for users who signed up before this fix)
+      try {
+        final userDoc = await _firestore.collection('users').doc(_currentUserId).get();
+        if (!userDoc.exists) {
+          print("SimpleAuth: Creating missing Firestore document for existing user");
+          await _createFirestoreUser(_currentUserId!, _currentUsername!, storedHashedPassword);
+        } else {
+          // Check if existing document needs password backup
+          final userData = userDoc.data() as Map<String, dynamic>?;
+          if (userData != null && !userData.containsKey('hashedPassword')) {
+            print("SimpleAuth: Adding password backup to existing Firestore document");
+            await _firestore.collection('users').doc(_currentUserId).update({
+              'hashedPassword': storedHashedPassword,
+            });
+          }
+        }
+      } catch (e) {
+        print("SimpleAuth: Error checking/creating Firestore document: $e");
+      }
 
       // Handle Remember Me
       if (rememberMe) {
@@ -191,13 +289,35 @@ class SimpleAuthManager {
     return null;
   }
 
-  /// Check if user has completed onboarding
+  /// Check if user has completed onboarding (local storage first, Firebase fallback)
   Future<bool> hasCompletedOnboarding() async {
     if (!_isAuthenticated || _currentUserId == null) {
       return false;
     }
 
     try {
+      // STEP 1: Check local storage first
+      try {
+        final users = await _getStoredUsers();
+        final userKey = _currentUsername?.toLowerCase();
+        
+        if (userKey != null && users.containsKey(userKey)) {
+          final localUserData = users[userKey];
+          bool hasMomStage = localUserData.containsKey('momStage') && localUserData['momStage'] != null;
+          bool hasQuestionSet1 = localUserData.containsKey('questionSet1') && localUserData['questionSet1'] != null;
+          bool hasQuestionSet2 = localUserData.containsKey('questionSet2') && localUserData['questionSet2'] != null;
+          
+          if (hasMomStage || hasQuestionSet1 || hasQuestionSet2) {
+            print("SimpleAuth: Checked onboarding status from LOCAL STORAGE");
+            return hasMomStage && (hasQuestionSet1 || hasQuestionSet2);
+          }
+        }
+      } catch (e) {
+        print("SimpleAuth: Error checking local storage for onboarding, falling back to Firebase: $e");
+      }
+
+      // STEP 2: Fallback to Firebase
+      print("SimpleAuth: Checking onboarding status from FIREBASE FALLBACK");
       final userDoc = await _firestore.collection('users').doc(_currentUserId).get();
       
       if (userDoc.exists) {
@@ -245,9 +365,8 @@ class SimpleAuthManager {
   }
 
   String _hashPassword(String password) {
-    final bytes = utf8.encode(password + 'simple_auth_salt_2024');
-    final digest = sha256.convert(bytes);
-    return digest.toString();
+    // Temporarily storing plain password for testing
+    return password;
   }
 
   Future<void> _saveRememberMe(String userId, String username) async {
@@ -272,10 +391,10 @@ class SimpleAuthManager {
     }
   }
 
-  Future<void> _createFirestoreUser(String userId, String username) async {
+  Future<void> _createFirestoreUser(String userId, String username, [String? hashedPassword]) async {
     try {
       // Create user document in Firestore with timeout protection
-      await _firestore.collection('users').doc(userId).set({
+      final userData = {
         'username': username,
         'isInConversation': false,
         'lastStatusUpdate': FieldValue.serverTimestamp(),
@@ -285,7 +404,14 @@ class SimpleAuthManager {
         'momStage': null,
         'questionSet1': null,
         'questionSet2': null,
-      }, SetOptions(merge: true)).timeout(
+      };
+      
+      // Add hashed password for credential backup if provided
+      if (hashedPassword != null) {
+        userData['hashedPassword'] = hashedPassword;
+      }
+      
+      await _firestore.collection('users').doc(userId).set(userData, SetOptions(merge: true)).timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           print("SimpleAuth: Firestore user creation timed out - continuing anyway");
@@ -306,7 +432,7 @@ class SimpleAuthManager {
     return _currentUserId ?? "no_user";
   }
 
-  /// Save user data to Firestore
+  /// Save user data (local storage first, Firebase backup)
   Future<bool> saveUserData(String field, dynamic value) async {
     try {
       if (!_isAuthenticated || _currentUserId == null) {
@@ -314,23 +440,44 @@ class SimpleAuthManager {
         return false;
       }
 
-      // Save to Firestore with timeout protection
-      await _firestore.collection('users').doc(_currentUserId).set({
-        field: value,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true)).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          print("SimpleAuth: Firestore save timed out for field: $field");
-          throw TimeoutException('Firestore operation timed out', const Duration(seconds: 10));
-        },
-      );
+      // STEP 1: Save to local storage first (primary)
+      try {
+        final users = await _getStoredUsers();
+        final userKey = _currentUsername?.toLowerCase();
+        
+        if (userKey != null && users.containsKey(userKey)) {
+          users[userKey][field] = value;
+          users[userKey]['updatedAt'] = DateTime.now().millisecondsSinceEpoch;
+          await _saveUsers(users);
+          print("SimpleAuth: Successfully saved $field to LOCAL STORAGE");
+        }
+      } catch (e) {
+        print("SimpleAuth: Error saving to local storage: $e");
+        // Continue to Firebase even if local save fails
+      }
+
+      // STEP 2: Save to Firebase as backup (secondary)
+      try {
+        await _firestore.collection('users').doc(_currentUserId).set({
+          field: value,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true)).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            print("SimpleAuth: Firestore save timed out for field: $field");
+            throw TimeoutException('Firestore operation timed out', const Duration(seconds: 10));
+          },
+        );
+        
+        print("SimpleAuth: Successfully saved $field to FIREBASE BACKUP");
+      } catch (e) {
+        print("SimpleAuth: Error saving data to Firebase backup: $e");
+        // Don't fail the entire operation if Firebase fails - local storage is primary
+      }
       
-      print("SimpleAuth: Successfully saved $field to Firestore");
-      return true;
+      return true; // Return success if local storage worked (Firebase is just backup)
     } catch (e) {
-      print("SimpleAuth: Error saving data to Firestore: $e");
-      // Return false but don't crash the app
+      print("SimpleAuth: Error in saveUserData: $e");
       return false;
     }
   }
@@ -355,7 +502,7 @@ class SimpleAuthManager {
     }
   }
 
-  /// Get user data from Firestore
+  /// Get user data (local storage first, Firebase fallback)
   Future<Map<String, dynamic>?> getUserData() async {
     try {
       if (!_isAuthenticated || _currentUserId == null) {
@@ -363,6 +510,40 @@ class SimpleAuthManager {
         return null;
       }
 
+      // STEP 1: Try to get data from local storage first
+      try {
+        final users = await _getStoredUsers();
+        final userKey = _currentUsername?.toLowerCase();
+        
+        if (userKey != null && users.containsKey(userKey)) {
+          final localUserData = users[userKey];
+          
+          // Check if we have the essential onboarding data locally
+          if (localUserData.containsKey('momStage') || 
+              localUserData.containsKey('questionSet1') || 
+              localUserData.containsKey('questionSet2')) {
+            
+            print("SimpleAuth: Retrieved user data from LOCAL STORAGE for $_currentUserId");
+            
+            // Convert local data to Firebase format for compatibility
+            return {
+              'username': localUserData['username'],
+              'momStage': localUserData['momStage'],
+              'questionSet1': localUserData['questionSet1'],
+              'questionSet2': localUserData['questionSet2'],
+              'authMethod': 'simple',
+              'isInConversation': false, // Default values for missing fields
+              'isWaiting': false,
+            };
+          }
+        }
+      } catch (e) {
+        print("SimpleAuth: Error reading local storage, falling back to Firebase: $e");
+      }
+
+      // STEP 2: Fallback to Firebase if local storage doesn't have complete data
+      print("SimpleAuth: Local storage incomplete, checking Firebase as fallback...");
+      
       DocumentSnapshot doc = await _firestore.collection('users').doc(_currentUserId).get().timeout(
         const Duration(seconds: 10),
         onTimeout: () {
@@ -373,10 +554,10 @@ class SimpleAuthManager {
       
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
-        print("SimpleAuth: Retrieved user data for $_currentUserId");
+        print("SimpleAuth: Retrieved user data from FIREBASE FALLBACK for $_currentUserId");
         return data;
       } else {
-        print("SimpleAuth: No user data found for $_currentUserId");
+        print("SimpleAuth: No user data found in local storage OR Firebase for $_currentUserId");
         return null;
       }
     } catch (e) {

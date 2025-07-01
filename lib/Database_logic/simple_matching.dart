@@ -181,7 +181,7 @@ class SimpleMatching {
     
     // Create match record with hard-coded conversation duration
     final matchRef = _firestore.collection('matches').doc();
-    final conversationDuration = 30; // Hard-coded 30 seconds
+    final conversationDuration = 300; // 5 minutes
     final expiresAt = DateTime.now().add(Duration(seconds: conversationDuration));
     
     final matchData = {
@@ -352,7 +352,7 @@ class SimpleMatching {
     required String matchId,
     required VoidCallback onTimeUp,
   }) {
-    final duration = Duration(seconds: 30); // Hard-coded 30 seconds
+    final duration = Duration(seconds: 300); // 5 minutes
     
     print('SimpleMatching: Starting conversation timer for ${duration.inSeconds} seconds');
     
@@ -383,20 +383,11 @@ class SimpleMatching {
                            (data['createdAt'] as Timestamp?)?.toDate() ?? 
                            DateTime.now();
         
-        // Hard-coded connection strength calculation (7 days decay period)
-        final now = DateTime.now();
-        final timeSinceContact = now.difference(lastContact);
-        final decayPeriod = Duration(days: 7); // Hard-coded 7 days
+        // Decay system removed – simply use stored strength
+        final int currentStrength = data['connectionStrength'] ?? 100;
         
-        int currentStrength = 0;
-        if (timeSinceContact < decayPeriod) {
-          final decayProgress = timeSinceContact.inMilliseconds / decayPeriod.inMilliseconds;
-          currentStrength = (100 * (1 - decayProgress)).round().clamp(0, 100);
-        }
-        
-        // Hard-coded warning threshold (24 hours)
-        final warningThreshold = Duration(hours: 24);
-        final needsWarning = timeSinceContact >= warningThreshold;
+        // Determine if connection needs warning based on custom rule (optional)
+        final bool needsWarning = false;
         
         return {
           'id': doc.id,
@@ -407,7 +398,7 @@ class SimpleMatching {
           'lastContact': lastContact,
           'strength': currentStrength,
           'needsWarning': needsWarning,
-          'status': currentStrength > 0 ? 'active' : 'expired',
+          'status': 'active',
           ...data,
         };
       }).toList();
