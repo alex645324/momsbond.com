@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:meta/meta.dart';
+import '../config/app_config.dart';
 
 /// Simplified matching system optimized for current needs with future extensibility
 class SimpleMatching {
@@ -182,7 +183,7 @@ class SimpleMatching {
     
     // Create match record with hard-coded conversation duration
     final matchRef = _firestore.collection('matches').doc();
-    final conversationDuration = 12; // 12 seconds for testing
+    final conversationDuration = AppConfig.chatDurationSeconds;
     final expiresAt = DateTime.now().add(Duration(seconds: conversationDuration));
     
     final matchData = {
@@ -358,7 +359,7 @@ class SimpleMatching {
     required String matchId,
     required VoidCallback onTimeUp,
   }) {
-    final duration = Duration(seconds: 12); // 12 seconds for testing
+    final duration = Duration(seconds: AppConfig.chatDurationSeconds);
     
     print('SimpleMatching: Starting conversation timer for ${duration.inSeconds} seconds');
     

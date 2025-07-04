@@ -3,7 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/messages_model.dart';
 import '../viewmodels/messages_viewmodel.dart';
+import '../Templates/chat_text_field.dart';
 import 'dashboard_view.dart';
+
+// Holds width / scale data calculated from screen width
+class _LayoutSizes {
+  final double contentWidth;
+  final double scaleFactor;
+  final bool isMobileWidth;
+  const _LayoutSizes(this.contentWidth, this.scaleFactor, this.isMobileWidth);
+}
 
 class MessagesView extends StatefulWidget {
   final ConversationInitData initData;
@@ -18,12 +27,46 @@ class MessagesView extends StatefulWidget {
 }
 
 class _MessagesViewState extends State<MessagesView> {
-  final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late final Widget _chatTextField;
+
+  // -------------------------------------------------------------------
+  // Small private helpers to remove repetition (public API unchanged)
+  // -------------------------------------------------------------------
+
+  static const double _kBaseWidth = 393.0;
+  static const double _kMaxContentWidth = 500.0;
+
+  _LayoutSizes _calcSizes(double screenWidth) {
+    final isMobileWidth = screenWidth <= _kMaxContentWidth;
+    final contentWidth = isMobileWidth ? screenWidth : _kBaseWidth;
+    final scaleFactor = contentWidth / _kBaseWidth;
+    return _LayoutSizes(contentWidth, scaleFactor, isMobileWidth);
+  }
+
+  // Common scaffold wrapper with the app background colour
+  Widget _baseScaffold(Widget body) =>
+      Scaffold(backgroundColor: const Color(0xFFEAE7E2), body: body);
+
+  // Quick helper for scaled GoogleFonts.poppins
+  TextStyle _txt(double size, double scale, FontWeight w, Color c) =>
+      GoogleFonts.poppins(fontSize: size * scale, fontWeight: w, color: c);
 
   @override
   void initState() {
     super.initState();
+    
+    // Create ChatTextField once and reuse it
+    _chatTextField = LayoutBuilder(
+      builder: (context, constraints) {
+        final sizes = _calcSizes(constraints.maxWidth);
+        return ChatTextField(
+          onSendMessage: _onSendMessage,
+          scaleFactor: sizes.scaleFactor,
+        );
+      },
+    );
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = Provider.of<MessagesViewModel>(context, listen: false);
       viewModel.setNavigationCallback(_navigateToDashboard);
@@ -46,18 +89,13 @@ class _MessagesViewState extends State<MessagesView> {
 
   @override
   void dispose() {
-    _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _sendMessage() {
-    final text = _messageController.text.trim();
-    if (text.isNotEmpty) {
-      Provider.of<MessagesViewModel>(context, listen: false).sendMessage(text);
-      _messageController.clear();
-      _scrollToBottom();
-    }
+  void _onSendMessage(String text) {
+    Provider.of<MessagesViewModel>(context, listen: false).sendMessage(text);
+    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -73,7 +111,8 @@ class _MessagesViewState extends State<MessagesView> {
   @override
   Widget build(BuildContext context) {
     return Consumer<MessagesViewModel>(
-      builder: (context, viewModel, child) {
+      child: _chatTextField,
+      builder: (context, viewModel, chatTextField) {
         if (viewModel.isLoading) {
           return _buildLoadingState();
         }
@@ -82,24 +121,17 @@ class _MessagesViewState extends State<MessagesView> {
           return _buildErrorState(viewModel);
         }
 
-        return _buildChatInterface(viewModel);
+        return _buildChatInterface(viewModel, chatTextField ?? _chatTextField);
       },
     );
   }
 
-  Widget _buildLoadingState() {
-    return Scaffold(
-      backgroundColor: const Color(0xFFEAE7E2),
-      body: const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
+  Widget _buildLoadingState() =>
+      _baseScaffold(const Center(child: CircularProgressIndicator()));
 
   Widget _buildErrorState(MessagesViewModel viewModel) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFEAE7E2),
-      body: Center(
+    return _baseScaffold(
+      Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -111,11 +143,7 @@ class _MessagesViewState extends State<MessagesView> {
             const SizedBox(height: 16),
             Text(
               'Chat Error',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF494949),
-              ),
+              style: _txt(20, 1, FontWeight.w600, const Color(0xFF494949)),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -123,10 +151,7 @@ class _MessagesViewState extends State<MessagesView> {
               child: Text(
                 viewModel.errorMessage ?? 'An error occurred',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: const Color(0xFF494949),
-                ),
+                style: _txt(14, 1, FontWeight.normal, const Color(0xFF494949)),
               ),
             ),
             const SizedBox(height: 24),
@@ -140,7 +165,7 @@ class _MessagesViewState extends State<MessagesView> {
     );
   }
 
-  Widget _buildChatInterface(MessagesViewModel viewModel) {
+  Widget _buildChatInterface(MessagesViewModel viewModel, Widget chatTextField) {
     return Scaffold(
       backgroundColor: const Color(0xFFEAE7E2),
       body: SafeArea(
@@ -148,16 +173,15 @@ class _MessagesViewState extends State<MessagesView> {
           builder: (context, constraints) {
             final screenHeight = constraints.maxHeight;
             final screenWidth = constraints.maxWidth;
-            // Treat screens wider than 500 px as "large" and keep the design at its phone baseline width.
-            const double baseWidth = 393.0;
-            const double maxContentWidth = 500.0; // optional cap for tablets/desktops
-            // Flags to help with responsive sizing for the exit button (reuse loading screen logic)
+
+            // Sizing helper reused
+            final sizes = _calcSizes(screenWidth);
             final bool isDesktop = screenWidth > 1024;
             final bool isTablet = screenWidth > 768 && screenWidth <= 1024;
-            final bool isMobileWidth = screenWidth <= maxContentWidth;
-            final double contentWidth = isMobileWidth ? screenWidth : baseWidth;
-            final double scaleFactor = contentWidth / baseWidth; // Never larger than 1 on big screens
-            final horizontalPadding = isMobileWidth ? 0.0 : (screenWidth - contentWidth) / 2;
+            final double contentWidth = sizes.contentWidth;
+            final double scaleFactor = sizes.scaleFactor;
+            final double horizontalPadding =
+                sizes.isMobileWidth ? 0.0 : (screenWidth - contentWidth) / 2;
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
             
             return Padding(
@@ -218,11 +242,8 @@ class _MessagesViewState extends State<MessagesView> {
                               ),
                               child: Text(
                                 viewModel.timerDisplay,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14 * scaleFactor,
-                                  fontWeight: FontWeight.w500,
-                                  color: const Color(0xFF494949),
-                                ),
+                                style: _txt(14, scaleFactor, FontWeight.w500,
+                                    const Color(0xFF494949)),
                               ),
                             ),
                           ),
@@ -235,7 +256,7 @@ class _MessagesViewState extends State<MessagesView> {
                         left: 20 * scaleFactor,
                         right: 20 * scaleFactor,
                         bottom: 20 * scaleFactor + bottomInset,
-                        child: _buildMessageInput(scaleFactor),
+                        child: chatTextField,
                       ),
 
                     // End overlay
@@ -257,11 +278,7 @@ class _MessagesViewState extends State<MessagesView> {
         child: Text(
           viewModel.messagesModel.starterText ?? 'Start your conversation...',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 16 * scaleFactor,
-            fontWeight: FontWeight.w400,
-            color: const Color(0xFF878787),
-          ),
+          style: _txt(16, scaleFactor, FontWeight.w400, const Color(0xFF878787)),
         ),
       );
     }
@@ -311,83 +328,13 @@ class _MessagesViewState extends State<MessagesView> {
               ),
               child: Text(
                 message.text,
-                style: GoogleFonts.poppins(
-                  fontSize: 11 * scaleFactor,
-                  fontWeight: FontWeight.w400,
-                  color: const Color(0xFF494949),
-                ),
+                style: _txt(11, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
                 softWrap: true,
                 overflow: TextOverflow.visible,
               ),
             ),
           ),
           if (isCurrentUser) SizedBox(width: 45 * scaleFactor),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageInput(double scaleFactor) {
-    return Container(
-      constraints: BoxConstraints(
-        minHeight: 44 * scaleFactor,
-        maxHeight: 120 * scaleFactor,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE6E3E0),
-        borderRadius: BorderRadius.circular(29 * scaleFactor),
-        border: Border.all(
-          color: const Color(0xFFD9D9D9),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              onSubmitted: (_) => _sendMessage(),
-              keyboardType: TextInputType.multiline,
-              textInputAction: TextInputAction.newline,
-              maxLines: null, // allow unlimited lines
-              minLines: 1,
-              style: GoogleFonts.poppins(
-                fontSize: 11 * scaleFactor,
-                color: const Color(0xFF494949),
-              ),
-              decoration: InputDecoration(
-                hintText: 'say how you feel...',
-                hintStyle: GoogleFonts.poppins(
-                  fontSize: 11 * scaleFactor,
-                  color: const Color(0xFF878787),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 20 * scaleFactor,
-                  vertical: 14 * scaleFactor,
-                ),
-                border: InputBorder.none,
-                isDense: true,
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: Container(
-              width: 32 * scaleFactor,
-              height: 32 * scaleFactor,
-              margin: EdgeInsets.only(right: 4 * scaleFactor, bottom: 4 * scaleFactor),
-              decoration: BoxDecoration(
-                color: const Color(0xFF494949),
-                borderRadius: BorderRadius.circular(16 * scaleFactor),
-              ),
-              child: Icon(
-                Icons.send,
-                color: Colors.white,
-                size: 14 * scaleFactor,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -403,11 +350,7 @@ class _MessagesViewState extends State<MessagesView> {
             children: [
               Text(
                 'Conversations Ended',
-                style: GoogleFonts.poppins(
-                  fontSize: 20 * scaleFactor,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF494949),
-                ),
+                style: _txt(20, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
               ),
               SizedBox(height: 16 * scaleFactor),
               
@@ -429,11 +372,7 @@ class _MessagesViewState extends State<MessagesView> {
       children: [
         Text(
           'did you feel connected to this person?',
-          style: GoogleFonts.poppins(
-            fontSize: 11 * scaleFactor,
-            fontWeight: FontWeight.w400,
-            color: const Color(0xFF494949),
-          ),
+          style: _txt(11, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
         ),
         SizedBox(height: 24 * scaleFactor),
         
@@ -445,10 +384,7 @@ class _MessagesViewState extends State<MessagesView> {
               SizedBox(height: 8 * scaleFactor),
               Text(
                 'Saving your feedback...',
-                style: GoogleFonts.poppins(
-                  fontSize: 10 * scaleFactor,
-                  color: const Color(0xFF494949),
-                ),
+                style: _txt(10, scaleFactor, FontWeight.normal, const Color(0xFF494949)),
               ),
             ],
           )
@@ -485,13 +421,7 @@ class _MessagesViewState extends State<MessagesView> {
                       child: Center(
                         child: Text(
                           'yes',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11 * scaleFactor,
-                            color: const Color(0xFF494949),
-                            fontWeight: viewModel.messagesModel.selectedFeedback == 'yes' 
-                                ? FontWeight.w600 
-                                : FontWeight.w400,
-                          ),
+                          style: _txt(11, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                         ),
                       ),
                     ),
@@ -526,13 +456,7 @@ class _MessagesViewState extends State<MessagesView> {
                       child: Center(
                         child: Text(
                           'no',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11 * scaleFactor,
-                            color: const Color(0xFF494949),
-                            fontWeight: viewModel.messagesModel.selectedFeedback == 'no' 
-                                ? FontWeight.w600 
-                                : FontWeight.w400,
-                          ),
+                          style: _txt(11, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                         ),
                       ),
                     ),
@@ -557,21 +481,13 @@ class _MessagesViewState extends State<MessagesView> {
         SizedBox(height: 16 * scaleFactor),
         Text(
           'Thanks for your feedback!',
-          style: GoogleFonts.poppins(
-            fontSize: 14 * scaleFactor,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF494949),
-          ),
+          style: _txt(14, scaleFactor, FontWeight.w500, const Color(0xFF494949)),
         ),
         SizedBox(height: 8 * scaleFactor),
         Text(
           'We hope you enjoyed connecting with another mom',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 11 * scaleFactor,
-            fontWeight: FontWeight.w400,
-            color: const Color(0xFF494949),
-          ),
+          style: _txt(11, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
         ),
         SizedBox(height: 24 * scaleFactor),
         
@@ -590,11 +506,7 @@ class _MessagesViewState extends State<MessagesView> {
             child: Center(
               child: Text(
                 'Continue',
-                style: GoogleFonts.poppins(
-                  fontSize: 12 * scaleFactor,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
+                style: _txt(12, scaleFactor, FontWeight.w500, Colors.white),
               ),
             ),
           ),

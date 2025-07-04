@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/messages_model.dart';
 import '../viewmodels/dashboard_viewmodel.dart';
 import '../Database_logic/simple_matching.dart';
+import '../config/app_config.dart';
 import 'package:meta/meta.dart';
 
 class MessagesViewModel extends ChangeNotifier {
@@ -36,6 +37,36 @@ class MessagesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ------------------------------------------------------------------
+  // Small helpers to reduce repetition (private – public API unchanged)
+  // ------------------------------------------------------------------
+
+  // Combines state update and optional debug log
+  void _setState(MessagesModel model, [String? log]) {
+    _updateState(model);
+    if (log != null) debugPrint('MessagesViewModel: $log');
+  }
+
+  // Cancel all timers / stream subscriptions used by this view-model
+  void _cancelStreamsAndTimers() {
+    _countdownTimer?.cancel();
+    _messagesSubscription?.cancel();
+    _conversationStatusSubscription?.cancel();
+  }
+
+  // Clear a user doc's conversation flags
+  Future<void> _clearConversationFlags(String userId,
+      {bool stampLastActive = false}) {
+    final data = {
+      'isInConversation': false,
+      'activeMatchId': FieldValue.delete(),
+    };
+    if (stampLastActive) {
+      data['lastActiveTimestamp'] = FieldValue.serverTimestamp();
+    }
+    return _firestore.collection('users').doc(userId).update(data);
+  }
+
   Future<void> initializeConversation(ConversationInitData initData) async {
     // Reset initialization state for new conversations
     if (_isInitialized && _messagesModel.conversationId != initData.conversationId) {
@@ -44,8 +75,7 @@ class MessagesViewModel extends ChangeNotifier {
       _conversationEndTriggered = false;
       
       // Clean up previous conversation resources
-      _countdownTimer?.cancel();
-      _messagesSubscription?.cancel();
+      _cancelStreamsAndTimers();
     }
     
     if (_isInitialized) {
@@ -59,7 +89,7 @@ class MessagesViewModel extends ChangeNotifier {
       // Generate starter text once during initialization
       final starterText = _generateStarterText(initData.currentUser, initData.matchedUser);
       
-      _updateState(_messagesModel.copyWith(
+      _setState(_messagesModel.copyWith(
         isLoading: true,
         conversationId: initData.conversationId,
         currentUser: initData.currentUser,
@@ -69,12 +99,12 @@ class MessagesViewModel extends ChangeNotifier {
         // Reset conversation state for new conversation
         isConversationActive: true,
         showEndOverlay: false,
-        remainingSeconds: 30,
+        remainingSeconds: AppConfig.chatDurationSeconds,
         messages: [], // Clear previous messages
         selectedFeedback: null,
         conversationEndStep: null,
         errorMessage: null,
-      ));
+      ), 'Conversation initialized state set');
 
       // Create conversation document in Firestore if it doesn't exist
       await _createConversationDocument(initData);
@@ -85,15 +115,15 @@ class MessagesViewModel extends ChangeNotifier {
       // Listen for remote conversation end events (isActive flag)
       _setupConversationStatusListener();
 
-      // Hard-coded conversation duration
-      final conversationDuration = 300; // 5 minutes
+      // Get conversation duration from config
+      final conversationDuration = AppConfig.chatDurationSeconds;
       final endTime = DateTime.now().add(Duration(seconds: conversationDuration));
       
-      _updateState(_messagesModel.copyWith(
+      _setState(_messagesModel.copyWith(
         isLoading: false,
         conversationEndTime: endTime,
         remainingSeconds: conversationDuration,
-      ));
+      ), 'Conversation initialized state set');
 
       // Start admin-managed countdown timer
       _startAdminManagedTimer(initData.matchId);
@@ -103,10 +133,10 @@ class MessagesViewModel extends ChangeNotifier {
       
     } catch (e) {
       print("MessagesViewModel: Initialization error: $e");
-      _updateState(_messagesModel.copyWith(
+      _setState(_messagesModel.copyWith(
         isLoading: false,
         errorMessage: "Failed to initialize conversation: $e",
-      ));
+      ), 'Conversation initialization error');
     }
   }
 
@@ -209,21 +239,22 @@ class MessagesViewModel extends ChangeNotifier {
         .listen(
           (snapshot) {
             try {
-              final messages = snapshot.docs.map((doc) {
-                return ChatMessage.fromFirestore(doc, _messagesModel.currentUser.id);
-              }).toList();
+              final messages = snapshot.docs
+                  .map((doc) =>
+                      ChatMessage.fromFirestore(doc, _messagesModel.currentUser.id))
+                  .toList();
               
-              _updateState(_messagesModel.copyWith(messages: messages));
-              print("MessagesViewModel: Received ${messages.length} messages via real-time listener");
+              _setState(_messagesModel.copyWith(messages: messages),
+                  'Received ${messages.length} messages via real-time listener');
             } catch (e) {
               print("MessagesViewModel: Error processing messages: $e");
             }
           },
           onError: (error) {
             print("MessagesViewModel: Error in message listener: $error");
-            _updateState(_messagesModel.copyWith(
+            _setState(_messagesModel.copyWith(
               errorMessage: "Failed to sync messages: $error",
-            ));
+            ), 'Error in message listener');
           },
         );
   }
@@ -255,7 +286,7 @@ class MessagesViewModel extends ChangeNotifier {
         if (timeLeft <= 0) {
           timer.cancel();
         } else {
-          _updateState(_messagesModel.copyWith(remainingSeconds: timeLeft));
+          _setState(_messagesModel.copyWith(remainingSeconds: timeLeft));
         }
       } else {
         timer.cancel();
@@ -286,9 +317,9 @@ class MessagesViewModel extends ChangeNotifier {
       
     } catch (e) {
       print("MessagesViewModel: Error sending message: $e");
-      _updateState(_messagesModel.copyWith(
+      _setState(_messagesModel.copyWith(
         errorMessage: "Failed to send message: $e",
-      ));
+      ), 'Error sending message');
     }
   }
 
@@ -303,8 +334,7 @@ class MessagesViewModel extends ChangeNotifier {
     
     try {
       // Cancel timer and message listener
-      _countdownTimer?.cancel();
-      _messagesSubscription?.cancel();
+      _cancelStreamsAndTimers();
       
       // Update conversation status in Firestore
       await _firestore
@@ -316,52 +346,43 @@ class MessagesViewModel extends ChangeNotifier {
       });
       
       // Update user status and clear active match
-      await _firestore.collection('users').doc(_messagesModel.currentUser.id).update({
-        'isInConversation': false,
-        'activeMatchId': FieldValue.delete(), // Clear active match ID
-        'lastActiveTimestamp': FieldValue.serverTimestamp(), // Mark as recently active
-      });
-      
-      await _firestore.collection('users').doc(_messagesModel.matchedUser.id).update({
-        'isInConversation': false,
-        'activeMatchId': FieldValue.delete(), // Clear active match ID
-        'lastActiveTimestamp': FieldValue.serverTimestamp(), // Mark as recently active
-      });
+      await _clearConversationFlags(_messagesModel.currentUser.id);
+      await _clearConversationFlags(_messagesModel.matchedUser.id);
       
       print("MessagesViewModel: Cleared activeMatchId for both users");
 
       // Show end overlay
-      _updateState(_messagesModel.copyWith(
+      _setState(_messagesModel.copyWith(
         isConversationActive: false,
         showEndOverlay: true,
         remainingSeconds: 0,
         conversationEndStep: ConversationEndStep.feedbackPrompt,
-      ));
+      ), 'Conversation ended - showing end overlay');
 
       print("MessagesViewModel: Conversation ended - real-time sync stopped");
 
     } catch (e) {
       print("MessagesViewModel: Error ending conversation: $e");
-      _updateState(_messagesModel.copyWith(
+      _setState(_messagesModel.copyWith(
         errorMessage: "Error ending conversation: $e",
-      ));
+      ), 'Error ending conversation');
     }
   }
 
   void selectFeedback(FeedbackChoice choice) {
-    _updateState(_messagesModel.copyWith(
+    _setState(_messagesModel.copyWith(
       selectedFeedback: choice.value,
       conversationEndStep: ConversationEndStep.feedbackSelected,
-    ));
+    ), 'Selected feedback');
   }
 
   Future<void> submitFeedback() async {
     if (_messagesModel.selectedFeedback == null) return;
 
-    _updateState(_messagesModel.copyWith(
+    _setState(_messagesModel.copyWith(
       isSubmittingFeedback: true,
       conversationEndStep: ConversationEndStep.submittingFeedback,
-    ));
+    ), 'Submitting feedback');
 
     try {
       final keepConnection = _messagesModel.selectedFeedback == 'yes';
@@ -421,17 +442,17 @@ class MessagesViewModel extends ChangeNotifier {
       print('MessagesViewModel: Feedback saved: User ${_messagesModel.currentUser.id} chose to ${keepConnection ? "keep" : "remove"} connection');
 
       // Show acknowledgment screen
-      _updateState(_messagesModel.copyWith(
+      _setState(_messagesModel.copyWith(
         isSubmittingFeedback: false,
         conversationEndStep: ConversationEndStep.acknowledgment,
-      ));
+      ), 'Feedback saved');
       
     } catch (e) {
       print('MessagesViewModel: Error saving feedback: $e');
-      _updateState(_messagesModel.copyWith(
+      _setState(_messagesModel.copyWith(
         isSubmittingFeedback: false,
         conversationEndStep: ConversationEndStep.acknowledgment,
-      ));
+      ), 'Error saving feedback');
     }
   }
 
@@ -463,8 +484,7 @@ class MessagesViewModel extends ChangeNotifier {
     print("MessagesViewModel: Resetting ViewModel state for new conversation");
     
     // Cancel timers and subscriptions
-    _countdownTimer?.cancel();
-    _messagesSubscription?.cancel();
+    _cancelStreamsAndTimers();
     
     // Reset flags
     _isInitialized = false;
@@ -488,16 +508,11 @@ class MessagesViewModel extends ChangeNotifier {
   void dispose() {
     print("MessagesViewModel: Disposing - cleaning up resources");
     
-    _countdownTimer?.cancel();
-    _messagesSubscription?.cancel();
-    _conversationStatusSubscription?.cancel();
+    _cancelStreamsAndTimers();
     
     // Update user status when disposing
     if (_isInitialized && !_conversationEndTriggered) {
-      _firestore.collection('users').doc(_messagesModel.currentUser.id).update({
-        'isInConversation': false,
-        'activeMatchId': FieldValue.delete(), // Clear active match ID
-      });
+      _clearConversationFlags(_messagesModel.currentUser.id);
       print("MessagesViewModel: Dispose cleanup - cleared user status and activeMatchId");
     }
     
@@ -511,7 +526,7 @@ class MessagesViewModel extends ChangeNotifier {
 
   void clearError() {
     if (_messagesModel.hasError) {
-      _updateState(_messagesModel.copyWith(errorMessage: null));
+      _setState(_messagesModel.copyWith(errorMessage: null));
     }
   }
 
