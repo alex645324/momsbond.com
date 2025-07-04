@@ -16,6 +16,9 @@ class MessagesViewModel extends ChangeNotifier {
   // Real-time message listener
   StreamSubscription<QuerySnapshot>? _messagesSubscription;
   
+  // Listener for conversation status changes (e.g., remote user ends conversation early)
+  StreamSubscription<DocumentSnapshot>? _conversationStatusSubscription;
+  
   bool _isInitialized = false;
   bool _conversationEndTriggered = false;
 
@@ -78,6 +81,9 @@ class MessagesViewModel extends ChangeNotifier {
       
       // Set up real-time message listener
       _setupMessageListener();
+
+      // Listen for remote conversation end events (isActive flag)
+      _setupConversationStatusListener();
 
       // Hard-coded conversation duration
       final conversationDuration = 300; // 5 minutes
@@ -484,6 +490,7 @@ class MessagesViewModel extends ChangeNotifier {
     
     _countdownTimer?.cancel();
     _messagesSubscription?.cancel();
+    _conversationStatusSubscription?.cancel();
     
     // Update user status when disposing
     if (_isInitialized && !_conversationEndTriggered) {
@@ -512,5 +519,35 @@ class MessagesViewModel extends ChangeNotifier {
   @visibleForTesting
   String computeStarterText(CurrentUserData current, MatchedUserData matched) {
     return _generateStarterText(current, matched);
+  }
+
+  // Listen for changes on the conversation document to detect remote end events
+  void _setupConversationStatusListener() {
+    if (_messagesModel.conversationId.isEmpty) return;
+    _conversationStatusSubscription?.cancel();
+
+    _conversationStatusSubscription = _firestore
+        .collection('conversations')
+        .doc(_messagesModel.conversationId)
+        .snapshots()
+        .listen((snapshot) {
+      if (!snapshot.exists) return;
+
+      final data = snapshot.data() as Map<String, dynamic>;
+      final isActive = data['isActive'] as bool? ?? true;
+
+      if (!isActive && !_conversationEndTriggered) {
+        print("MessagesViewModel: Detected isActive=false – remote end signal");
+        _onConversationEnd();
+      }
+    }, onError: (error) {
+      print("MessagesViewModel: Error in conversation status listener: $error");
+    });
+  }
+
+  /// Called by UI (exit button) to end conversation early for both users
+  void endConversationEarly() {
+    print("MessagesViewModel: endConversationEarly invoked by local user");
+    _onConversationEnd();
   }
 } 

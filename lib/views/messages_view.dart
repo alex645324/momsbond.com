@@ -151,6 +151,9 @@ class _MessagesViewState extends State<MessagesView> {
             // Treat screens wider than 500 px as "large" and keep the design at its phone baseline width.
             const double baseWidth = 393.0;
             const double maxContentWidth = 500.0; // optional cap for tablets/desktops
+            // Flags to help with responsive sizing for the exit button (reuse loading screen logic)
+            final bool isDesktop = screenWidth > 1024;
+            final bool isTablet = screenWidth > 768 && screenWidth <= 1024;
             final bool isMobileWidth = screenWidth <= maxContentWidth;
             final double contentWidth = isMobileWidth ? screenWidth : baseWidth;
             final double scaleFactor = contentWidth / baseWidth; // Never larger than 1 on big screens
@@ -164,6 +167,27 @@ class _MessagesViewState extends State<MessagesView> {
                 height: screenHeight,
                 child: Stack(
                   children: [
+                    // Exit (X) button – identical design to LoadingView
+                    Positioned(
+                      top: 10 * scaleFactor,
+                      right: 10 * scaleFactor,
+                      child: Opacity(
+                        opacity: 0.6,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          iconSize: isDesktop
+                              ? 28
+                              : (isTablet ? 24 : 20 * scaleFactor),
+                          icon: const Icon(Icons.close),
+                          color: const Color(0xFF494949),
+                          tooltip: 'Go to dashboard',
+                          onPressed: () {
+                            final viewModel = Provider.of<MessagesViewModel>(context, listen: false);
+                            viewModel.endConversationEarly();
+                          },
+                        ),
+                      ),
+                    ),
                     // Chat messages area
                     Positioned(
                       left: 20,

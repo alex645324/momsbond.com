@@ -835,7 +835,6 @@ class DashboardViewModel extends ChangeNotifier {
       // Update user document with summary (for quick access)
       await _firestore.collection('users').doc(userId).update({
         'connectionSummary': connectionSummary,
-        'lastConnectionUpdate': DateTime.now(),
       });
       
     } catch (e) {
