@@ -349,41 +349,31 @@ class ResponsiveStageSelection extends StatelessWidget {
     required this.stageViewModel,
   }) : super(key: key);
 
-  double get horizontalPadding {
-    if (isDesktop) return screenWidth * 0.08; // 8% of screen width
-    if (isTablet) return screenWidth * 0.06; // 6% of screen width
-    return screenWidth * 0.04; // 4% of screen width
-  }
+  // REFACTORED: One generic helper for responsive values
+  T _deviceValue<T>(T desktop, T tablet, T mobile) =>
+      isDesktop ? desktop : (isTablet ? tablet : mobile);
 
-  double get verticalPadding {
-    if (isDesktop) return screenHeight * 0.08; // 8% of screen height
-    if (isTablet) return screenHeight * 0.06; // 6% of screen height
-    return screenHeight * 0.04; // 4% of screen height
-  }
+  // REFACTORED: Consolidated getters using the helper
+  double get horizontalPadding => _deviceValue(screenWidth * 0.08, screenWidth * 0.06, screenWidth * 0.04);
+  double get verticalPadding   => _deviceValue(screenHeight * 0.08, screenHeight * 0.06, screenHeight * 0.04);
+  double get titleFontSize     => _deviceValue(32, 24, 20);
+  double get subtitleFontSize  => _deviceValue(16, 14, 11);
+  double get buttonHeight      => _deviceValue(screenHeight * 0.09, screenHeight * 0.10, 65);
+  double get buttonSpacing     => _deviceValue(screenHeight * 0.04, screenHeight * 0.03, screenHeight * 0.02);
 
-  double get titleFontSize {
-    if (isDesktop) return 32;
-    if (isTablet) return 24;
-    return 20;
-  }
+  // REFACTORED: Central stage definition list
+  static const List<_StageDef> _stageDefs = [
+    _StageDef('trying',   'trying moms?',  Color(0xFFEED5B9)),
+    _StageDef('pregnant', 'pregnant?',     Color(0xFFEFD4E2)),
+    _StageDef('toddler',  'toddler mom?',  Color(0xFFEDE4C6)),
+    _StageDef('teen',     'teen mom?',     Color(0xFFD8DAC5)),
+    _StageDef('adult',    'adult mom?',    Color(0xFFBBCAE4)),
+  ];
 
-  double get subtitleFontSize {
-    if (isDesktop) return 16;
-    if (isTablet) return 14;
-    return 11;
-  }
-
-  double get buttonHeight {
-    if (isDesktop) return screenHeight * 0.09; // ~9% of screen height for desktop
-    if (isTablet) return screenHeight * 0.1; // 10% of screen height for tablet
-    return 65; // Keep mobile size fixed
-  }
-
-  double get buttonSpacing {
-    if (isDesktop) return screenHeight * 0.04; // 4% of screen height
-    if (isTablet) return screenHeight * 0.03; // 3% of screen height
-    return screenHeight * 0.02; // 2% of screen height
-  }
+  // Helper to wrap a button in centered row (used by both layouts)
+  Widget _centeredButton(Widget btn, {int flex = 3}) => Row(
+        children: [const Spacer(), Expanded(flex: flex, child: btn), const Spacer()],
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -473,128 +463,38 @@ class ResponsiveStageSelection extends StatelessWidget {
   }
 
   Widget buildMobileButtons() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            const Spacer(),
-            Expanded(
-              flex: 3,
-              child: buildStageButton(
-                'pregnant',
-                'pregnant?',
-                const Color(0xFFEFD4E2),
-                null,
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-        SizedBox(height: buttonSpacing),
-        Row(
-          children: [
-            const Spacer(),
-            Expanded(
-              flex: 3,
-              child: buildStageButton(
-                'toddler',
-                'toddler mom?',
-                const Color(0xFFEDE4C6),
-                null,
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-        SizedBox(height: buttonSpacing),
-        Row(
-          children: [
-            const Spacer(),
-            Expanded(
-              flex: 3,
-              child: buildStageButton(
-                'teen',
-                'teen mom?',
-                const Color(0xFFD8DAC5),
-                null,
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-        SizedBox(height: buttonSpacing),
-        Row(
-          children: [
-            const Spacer(),
-            Expanded(
-              flex: 3,
-              child: buildStageButton(
-                'adult',
-                'adult mom?',
-                const Color(0xFFBBCAE4).withOpacity(0.30),
-                null,
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-      ],
-    );
+    // REFACTORED: Build column from _stageDefs list dynamically
+    final children = <Widget>[];
+    for (var i = 0; i < _stageDefs.length; i++) {
+      final d = _stageDefs[i];
+      children.add(_centeredButton(buildStageButton(d.value, d.text, d.color, null)));
+      if (i != _stageDefs.length - 1) children.add(SizedBox(height: buttonSpacing));
+    }
+    return Column(children: children);
   }
 
   Widget buildDesktopButtons() {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: screenWidth * 0.15, // Increase horizontal padding to make buttons smaller
-      ),
+      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.15),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // First row
-          Row(
-            children: [
-              Expanded(
-                child: buildStageButton(
-                  'pregnant',
-                  'pregnant?',
-                  const Color(0xFFEFD4E2),
-                  null,
-                ),
-              ),
-              SizedBox(width: buttonSpacing),
-              Expanded(
-                child: buildStageButton(
-                  'toddler',
-                  'toddler mom?',
-                  const Color(0xFFEDE4C6),
-                  null,
-                ),
-              ),
-            ],
-          ),
+          // First row – single centred button (trying moms)
+          _centeredButton(buildStageButton(_stageDefs[0].value, _stageDefs[0].text, _stageDefs[0].color, null), flex: 2),
           SizedBox(height: buttonSpacing),
-          // Second row
-          Row(
-            children: [
-              Expanded(
-                child: buildStageButton(
-                  'teen',
-                  'teen mom?',
-                  const Color(0xFFD8DAC5),
-                  null,
-                ),
-              ),
-              SizedBox(width: buttonSpacing),
-              Expanded(
-                child: buildStageButton(
-                  'adult',
-                  'adult mom?',
-                  const Color(0xFFBBCAE4).withOpacity(0.30),
-                  null,
-                ),
-              ),
-            ],
-          ),
+          // Second row – pregnant & toddler
+          Row(children: [
+            Expanded(child: buildStageButton(_stageDefs[1].value, _stageDefs[1].text, _stageDefs[1].color, null)),
+            SizedBox(width: buttonSpacing),
+            Expanded(child: buildStageButton(_stageDefs[2].value, _stageDefs[2].text, _stageDefs[2].color, null)),
+          ]),
+          SizedBox(height: buttonSpacing),
+          // Third row – teen & adult
+          Row(children: [
+            Expanded(child: buildStageButton(_stageDefs[3].value, _stageDefs[3].text, _stageDefs[3].color, null)),
+            SizedBox(width: buttonSpacing),
+            Expanded(child: buildStageButton(_stageDefs[4].value, _stageDefs[4].text, _stageDefs[4].color, null)),
+          ]),
         ],
       ),
     );
@@ -722,4 +622,12 @@ class ResponsiveStageSelection extends StatelessWidget {
       ),
     );
   }
+}
+
+// REFACTORED: Private helper class for stage metadata
+class _StageDef {
+  final String value;
+  final String text;
+  final Color color;
+  const _StageDef(this.value, this.text, this.color);
 } 

@@ -3,18 +3,57 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:mvp_code/Database_logic/firebase_options.dart';
 import 'package:mvp_code/Database_logic/simple_auth_manager.dart';
 import 'package:mvp_code/viewmodels/dashboard_viewmodel.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('MotherApp core flow', () {
-    final authManager = SimpleAuthManager();
+    late SimpleAuthManager authManager;
 
     setUpAll(() async {
+      // Mock Firebase Core & Firestore channels
+      const MethodChannel coreChannel = MethodChannel('plugins.flutter.io/firebase_core');
+      coreChannel.setMockMethodCallHandler((MethodCall methodCall) async {
+        switch (methodCall.method) {
+          case 'initializeCore':
+            return [
+              {
+                'name': '[DEFAULT]',
+                'options': {
+                  'apiKey': 'fake',
+                  'appId': 'fake',
+                  'messagingSenderId': 'fake',
+                  'projectId': 'fake'
+                },
+                'pluginConstants': {},
+              }
+            ];
+          case 'initializeApp':
+            return {
+              'name': methodCall.arguments['appName'] ?? '[DEFAULT]',
+              'options': methodCall.arguments['options'],
+              'pluginConstants': {},
+            };
+        }
+        return null;
+      });
+
+      const MethodChannel firestoreChannel = MethodChannel('plugins.flutter.io/firebase_firestore');
+      firestoreChannel.setMockMethodCallHandler((methodCall) async {
+        return null;
+      });
+
+      addTearDown(() async {
+        coreChannel.setMockMethodCallHandler(null);
+        firestoreChannel.setMockMethodCallHandler(null);
+      });
+
       // Initialize Firebase for integration-style tests
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      authManager = SimpleAuthManager();
       await authManager.initialize();
     });
 

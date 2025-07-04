@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/messages_model.dart';
 import '../viewmodels/dashboard_viewmodel.dart';
 import '../Database_logic/simple_matching.dart';
+import 'package:meta/meta.dart';
 
 class MessagesViewModel extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -52,12 +53,16 @@ class MessagesViewModel extends ChangeNotifier {
     print("MessagesViewModel: Initializing conversation ${initData.conversationId} with real-time messaging");
     
     try {
+      // Generate starter text once during initialization
+      final starterText = _generateStarterText(initData.currentUser, initData.matchedUser);
+      
       _updateState(_messagesModel.copyWith(
         isLoading: true,
         conversationId: initData.conversationId,
         currentUser: initData.currentUser,
         matchedUser: initData.matchedUser,
         matchId: initData.matchId,
+        starterText: starterText,
         // Reset conversation state for new conversation
         isConversationActive: true,
         showEndOverlay: false,
@@ -97,6 +102,55 @@ class MessagesViewModel extends ChangeNotifier {
         errorMessage: "Failed to initialize conversation: $e",
       ));
     }
+  }
+
+  String _generateStarterText(CurrentUserData currentUser, MatchedUserData matchedUser) {
+    // Clean and prepare topics
+    final currentTopics = currentUser.selectedQuestions
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+
+    final matchedTopics = matchedUser.selectedQuestions
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+
+    print("DEBUG: Current user topics: $currentTopics");
+    print("DEBUG: Matched user topics: $matchedTopics");
+
+    // Initialize topic as null
+    String? topic;
+
+    // First try to find a shared challenge
+    if (currentTopics.isNotEmpty && matchedTopics.isNotEmpty) {
+      for (var t in currentTopics) {
+        if (matchedTopics.contains(t)) {
+          topic = t;
+          print("DEBUG: Found shared topic: $topic");
+          break;
+        }
+      }
+    }
+
+    // If no shared topic found, use current user's first selection
+    if (topic == null) {
+      // Try current user's topics first
+      if (currentTopics.isNotEmpty) {
+        topic = currentTopics.first;
+        print("DEBUG: Using current user's first topic: $topic");
+      }
+      // Fallback to matched user's topics if current user has none
+      else if (matchedTopics.isNotEmpty) {
+        topic = matchedTopics.first;
+        print("DEBUG: Using matched user's first topic: $topic");
+      }
+    }
+
+    // Generate and return the starter text
+    final text = 'your connection also struggles with \n"${topic ?? 'connecting with other moms'}"';
+    print("DEBUG: Generated starter text: $text");
+    return text;
   }
 
   Future<void> _createConversationDocument(ConversationInitData initData) async {
@@ -452,5 +506,11 @@ class MessagesViewModel extends ChangeNotifier {
     if (_messagesModel.hasError) {
       _updateState(_messagesModel.copyWith(errorMessage: null));
     }
+  }
+
+  // Expose starter text generation for unit tests
+  @visibleForTesting
+  String computeStarterText(CurrentUserData current, MatchedUserData matched) {
+    return _generateStarterText(current, matched);
   }
 } 

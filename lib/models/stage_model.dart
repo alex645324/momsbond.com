@@ -32,6 +32,7 @@ class StageModel {
   
   // Available motherhood stages (must match existing values for compatibility)
   static const List<String> availableStages = [
+    'trying moms?',
     'pregnant?',
     'toddler mom?',
     'teen mom?',
@@ -40,20 +41,51 @@ class StageModel {
   
   // Map display values to database values for compatibility
   static const Map<String, String> stageMapping = {
+    'trying': 'trying moms?',
     'pregnant': 'pregnant?',
     'toddler': 'toddler mom?',
     'teen': 'teen mom?',
     'adult': 'adult mom?',
   };
   
+  // REFACTORED: Using helper method to reduce repetitive fallback logic
   static String getDisplayValue(String dbValue) {
+    return _findKeyByValue(dbValue, dbValue);
+  }
+  
+  // REFACTORED: Using helper method for consistent fallback pattern
+  static String getDatabaseValue(String displayValue) {
+    return _safeMapLookup(displayValue, displayValue);
+  }
+  
+  // REFACTORED: Private helper for reverse map lookup with fallback
+  static String _findKeyByValue(String value, String fallback) {
     return stageMapping.entries
-        .firstWhere((entry) => entry.value == dbValue, 
-                   orElse: () => MapEntry(dbValue, dbValue))
+        .firstWhere((entry) => entry.value == value, 
+                   orElse: () => MapEntry(fallback, fallback))
         .key;
   }
   
-  static String getDatabaseValue(String displayValue) {
-    return stageMapping[displayValue] ?? displayValue;
+  // REFACTORED: Private helper for safe map lookup with fallback
+  static String _safeMapLookup(String key, String fallback) {
+    return stageMapping[key] ?? fallback;
+  }
+  
+  // REFACTORED: Added validation helpers (private - don't change public API)
+  static bool _isValidDisplayValue(String displayValue) {
+    return stageMapping.containsKey(displayValue);
+  }
+  
+  static bool _isValidDatabaseValue(String dbValue) {
+    return stageMapping.containsValue(dbValue);
+  }
+  
+  // REFACTORED: Added utility methods for common operations (private)
+  static List<String> _getAllDisplayValues() {
+    return stageMapping.keys.toList();
+  }
+  
+  static List<String> _getAllDatabaseValues() {
+    return stageMapping.values.toList();
   }
 } 

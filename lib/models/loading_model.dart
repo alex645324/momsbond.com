@@ -83,52 +83,12 @@ class UserData {
   static UserData fromFirebaseData(String userId, Map<String, dynamic> data) {
     print("DEBUG: UserData.fromFirebaseData called with data: $data");
     
-    // Combine question sets like the original implementation
+    // REFACTORED: Process all question sets using reusable function
     List<String> selectedQuestions = [];
+    _processQuestionSets(data, selectedQuestions);
     
-    print("DEBUG: Processing questionSet1...");
-    if (data.containsKey('questionSet1')) {
-      final questionSet1 = data['questionSet1'];
-      print("DEBUG: questionSet1 value: $questionSet1 (type: ${questionSet1.runtimeType})");
-      
-      try {
-        if (questionSet1 != null) {
-          selectedQuestions.addAll(List<String>.from(questionSet1));
-          print("DEBUG: questionSet1 processed successfully, count: ${selectedQuestions.length}");
-        }
-      } catch (e) {
-        print("DEBUG: Error processing questionSet1: $e");
-      }
-    }
-    
-    print("DEBUG: Processing questionSet2...");
-    if (data.containsKey('questionSet2')) {
-      final questionSet2 = data['questionSet2'];
-      print("DEBUG: questionSet2 value: $questionSet2 (type: ${questionSet2.runtimeType})");
-      
-      try {
-        if (questionSet2 != null) {
-          selectedQuestions.addAll(List<String>.from(questionSet2));
-          print("DEBUG: questionSet2 processed successfully, total count: ${selectedQuestions.length}");
-        }
-      } catch (e) {
-        print("DEBUG: Error processing questionSet2: $e");
-      }
-    }
-
-    print("DEBUG: Processing momStage...");
-    final momStageRaw = data['momStage'];
-    print("DEBUG: momStage value: $momStageRaw (type: ${momStageRaw.runtimeType})");
-    
-    List<String> momStages = [];
-    try {
-      if (momStageRaw != null) {
-        momStages = List<String>.from(momStageRaw);
-        print("DEBUG: momStage processed successfully: $momStages");
-      }
-    } catch (e) {
-      print("DEBUG: Error processing momStage: $e");
-    }
+    // REFACTORED: Process momStage using reusable function
+    final momStages = _processMomStages(data);
 
     final result = UserData(
       userId: userId,
@@ -139,6 +99,74 @@ class UserData {
     
     print("DEBUG: UserData created: $result");
     return result;
+  }
+
+  // REFACTORED: Reusable function to process all question sets
+  static void _processQuestionSets(Map<String, dynamic> data, List<String> selectedQuestions) {
+    const questionSetKeys = ['questionSet1', 'questionSet2', 'questionSet3'];
+    
+    for (final key in questionSetKeys) {
+      _processQuestionSet(data, key, selectedQuestions);
+    }
+  }
+
+  // REFACTORED: Generic function to process a single question set
+  static void _processQuestionSet(Map<String, dynamic> data, String key, List<String> selectedQuestions) {
+    _debugLog("Processing $key...");
+    
+    if (!data.containsKey(key)) {
+      _debugLog("$key not found in data");
+      return;
+    }
+    
+    final questionSet = data[key];
+    _debugLog("$key value: $questionSet (type: ${questionSet.runtimeType})");
+    
+    final questions = _safeConvertToStringList(questionSet, key);
+    if (questions.isNotEmpty) {
+      selectedQuestions.addAll(questions);
+      _debugLog("$key processed successfully, total count: ${selectedQuestions.length}");
+    }
+  }
+
+  // REFACTORED: Reusable function to process momStage
+  static List<String> _processMomStages(Map<String, dynamic> data) {
+    _debugLog("Processing momStage...");
+    
+    final momStageRaw = data['momStage'];
+    _debugLog("momStage value: $momStageRaw (type: ${momStageRaw.runtimeType})");
+    
+    final momStages = _safeConvertToStringList(momStageRaw, 'momStage');
+    if (momStages.isNotEmpty) {
+      _debugLog("momStage processed successfully: $momStages");
+    }
+    
+    return momStages;
+  }
+
+  // REFACTORED: Generic safe conversion to List<String> with error handling
+  static List<String> _safeConvertToStringList(dynamic value, String fieldName) {
+    try {
+      if (value == null) return [];
+      
+      if (value is List) {
+        return value.map((item) => item?.toString() ?? '').where((item) => item.isNotEmpty).toList();
+      }
+      
+      if (value is String && value.isNotEmpty) {
+        return [value];
+      }
+      
+      return [];
+    } catch (e) {
+      _debugLog("Error processing $fieldName: $e");
+      return [];
+    }
+  }
+
+  // REFACTORED: Centralized debug logging
+  static void _debugLog(String message) {
+    print("DEBUG: $message");
   }
 
   bool get isValidForMatching => momStages.isNotEmpty || selectedQuestions.isNotEmpty;

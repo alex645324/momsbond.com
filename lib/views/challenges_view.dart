@@ -209,9 +209,13 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildProgressDot(getSize, isActive: challengesViewModel.isSet1),
-                    SizedBox(width: getSize(12)),
-                    _buildProgressDot(getSize, isActive: challengesViewModel.isSet2),
+                    if (challengesViewModel.currentSet == 3) ...[
+                      _buildProgressDot(getSize, isActive: challengesViewModel.currentSet == 3),
+                    ] else ...[
+                      _buildProgressDot(getSize, isActive: challengesViewModel.isSet1),
+                      SizedBox(width: getSize(12)),
+                      _buildProgressDot(getSize, isActive: challengesViewModel.isSet2),
+                    ],
                   ],
                 ),
 
@@ -234,7 +238,9 @@ class ResponsiveChallengesLayout extends StatelessWidget {
 
                 // Main title
                 Text(
-                  "what kinds of challenges\nhave you encountered?",
+                  challengesViewModel.currentSet == 3 
+                      ? "what challenges are you\nfacing while trying?"
+                      : "what kinds of challenges\nhave you encountered?",
                   style: TextStyle(
                     fontFamily: "Poppins",
                     fontWeight: FontWeight.w500,
@@ -311,6 +317,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
   Widget buildDesktopLayout(double Function(double) getSize, double buttonHeight) {
     final questions = challengesViewModel.currentAvailableQuestions;
     final hasThreeOptions = questions.length == 3;
+    final hasFourOptions = questions.length == 4;
     final rows = hasThreeOptions ? 2 : (questions.length / 2).ceil();
 
     return Column(
@@ -341,8 +348,9 @@ class ResponsiveChallengesLayout extends StatelessWidget {
         ),
         SizedBox(height: getSize(20)),
         
-        // Second row (centered if three options)
+        // Second row
         if (hasThreeOptions)
+          // Single centered item for 3 questions
           Padding(
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.15),
             child: Container(
@@ -353,7 +361,33 @@ class ResponsiveChallengesLayout extends StatelessWidget {
               ),
             ),
           )
+        else if (hasFourOptions)
+          // Two items for 4 questions
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: buttonHeight,
+                  child: buildChallengeButton(
+                    getSize,
+                    questions[2],
+                  ),
+                ),
+              ),
+              SizedBox(width: getSize(20)),
+              Expanded(
+                child: Container(
+                  height: buttonHeight,
+                  child: buildChallengeButton(
+                    getSize,
+                    questions[3],
+                  ),
+                ),
+              ),
+            ],
+          )
         else
+          // Handle other cases (like more than 4 questions)
           for (var row = 1; row < rows; row++) ...[
             Row(
               children: [

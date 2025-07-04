@@ -229,31 +229,9 @@ class _MessagesViewState extends State<MessagesView> {
 
   Widget _buildMessagesArea(MessagesViewModel viewModel, double scaleFactor) {
     if (viewModel.messages.isEmpty) {
-      // Determine a shared challenge topic between the two users, if any
-      String? topic;
-      final currentTopics = viewModel.messagesModel.currentUser.selectedQuestions;
-      final matchedTopics = viewModel.messagesModel.matchedUser.selectedQuestions;
-
-      // Try to find a shared challenge first
-      if (currentTopics.isNotEmpty && matchedTopics.isNotEmpty) {
-        for (final t in currentTopics) {
-          if (matchedTopics.contains(t)) {
-            topic = t;
-            break;
-          }
-        }
-      }
-
-      // If no shared topic, fall back to one the current user selected
-      topic ??= currentTopics.isNotEmpty ? currentTopics.first : null;
-
-      final starterText = topic != null && topic.isNotEmpty
-          ? 'your connection also struggles with \n"$topic"'
-          : 'Start your conversation...';
-
       return Center(
         child: Text(
-          starterText,
+          viewModel.messagesModel.starterText ?? 'Start your conversation...',
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             fontSize: 16 * scaleFactor,

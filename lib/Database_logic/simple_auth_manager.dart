@@ -303,13 +303,9 @@ class SimpleAuthManager {
         
         if (userKey != null && users.containsKey(userKey)) {
           final localUserData = users[userKey];
-          bool hasMomStage = localUserData.containsKey('momStage') && localUserData['momStage'] != null;
-          bool hasQuestionSet1 = localUserData.containsKey('questionSet1') && localUserData['questionSet1'] != null;
-          bool hasQuestionSet2 = localUserData.containsKey('questionSet2') && localUserData['questionSet2'] != null;
-          
-          if (hasMomStage || hasQuestionSet1 || hasQuestionSet2) {
+          if (_hasOnboardingData(localUserData)) {
             print("SimpleAuth: Checked onboarding status from LOCAL STORAGE");
-            return hasMomStage && (hasQuestionSet1 || hasQuestionSet2);
+            return true;
           }
         }
       } catch (e) {
@@ -322,11 +318,10 @@ class SimpleAuthManager {
       
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
-        bool hasMomStage = userData.containsKey('momStage');
-        bool hasQuestionSet1 = userData.containsKey('questionSet1');
-        bool hasQuestionSet2 = userData.containsKey('questionSet2');
-        
-        return hasMomStage && (hasQuestionSet1 || hasQuestionSet2);
+        if (_hasOnboardingData(userData)) {
+          print("SimpleAuth: Checked onboarding status from FIREBASE FALLBACK");
+          return true;
+        }
       }
       
       return false;
@@ -340,7 +335,7 @@ class SimpleAuthManager {
 
   Future<Map<String, dynamic>> _getStoredUsers() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs();
       final usersJson = prefs.getString(_usersKey);
       if (usersJson != null) {
         return Map<String, dynamic>.from(jsonDecode(usersJson));
@@ -353,7 +348,7 @@ class SimpleAuthManager {
 
   Future<void> _saveUsers(Map<String, dynamic> users) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs();
       await prefs.setString(_usersKey, jsonEncode(users));
     } catch (e) {
       print("SimpleAuth: Error saving users: $e");
@@ -518,10 +513,8 @@ class SimpleAuthManager {
         if (userKey != null && users.containsKey(userKey)) {
           final localUserData = users[userKey];
           
-          // Check if we have the essential onboarding data locally
-          if (localUserData.containsKey('momStage') || 
-              localUserData.containsKey('questionSet1') || 
-              localUserData.containsKey('questionSet2')) {
+          // Check if user has completed onboarding data locally
+          if (_hasOnboardingData(localUserData)) {
             
             print("SimpleAuth: Retrieved user data from LOCAL STORAGE for $_currentUserId");
             
@@ -531,6 +524,7 @@ class SimpleAuthManager {
               'momStage': localUserData['momStage'],
               'questionSet1': localUserData['questionSet1'],
               'questionSet2': localUserData['questionSet2'],
+              'questionSet3': localUserData['questionSet3'],
               'authMethod': 'simple',
               'isInConversation': false, // Default values for missing fields
               'isWaiting': false,
@@ -597,6 +591,19 @@ class SimpleAuthManager {
         duration: const Duration(seconds: 3),
       ),
     );
+  }
+
+  // === Small shared helpers ==================================================
+
+  // SharedPreferences shortcut with single instantiation site
+  Future<SharedPreferences> _prefs() async => await SharedPreferences.getInstance();
+
+  // Consistent onboarding-data completeness check used in multiple callers
+  bool _hasOnboardingData(Map<String, dynamic> data) {
+    return data['momStage'] != null &&
+        (data['questionSet1'] != null ||
+         data['questionSet2'] != null ||
+         data['questionSet3'] != null);
   }
 }
 

@@ -23,7 +23,8 @@ class MessagesModel {
   final bool showEndOverlay;
   final String? selectedFeedback;
   final bool isSubmittingFeedback;
-  final ConversationEndStep? conversationEndStep; // New field
+  final ConversationEndStep? conversationEndStep;
+  final String? starterText;
 
   const MessagesModel({
     this.isLoading = true,
@@ -40,6 +41,7 @@ class MessagesModel {
     this.selectedFeedback,
     this.isSubmittingFeedback = false,
     this.conversationEndStep,
+    this.starterText,
   });
 
   MessagesModel copyWith({
@@ -57,6 +59,7 @@ class MessagesModel {
     String? selectedFeedback,
     bool? isSubmittingFeedback,
     ConversationEndStep? conversationEndStep,
+    String? starterText,
   }) {
     return MessagesModel(
       isLoading: isLoading ?? this.isLoading,
@@ -73,6 +76,7 @@ class MessagesModel {
       selectedFeedback: selectedFeedback ?? this.selectedFeedback,
       isSubmittingFeedback: isSubmittingFeedback ?? this.isSubmittingFeedback,
       conversationEndStep: conversationEndStep ?? this.conversationEndStep,
+      starterText: starterText ?? this.starterText,
     );
   }
 

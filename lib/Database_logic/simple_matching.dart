@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'package:meta/meta.dart';
 
 /// Simplified matching system optimized for current needs with future extensibility
 class SimpleMatching {
@@ -181,7 +182,7 @@ class SimpleMatching {
     
     // Create match record with hard-coded conversation duration
     final matchRef = _firestore.collection('matches').doc();
-    final conversationDuration = 300; // 5 minutes
+    final conversationDuration = 12; // 12 seconds for testing
     final expiresAt = DateTime.now().add(Duration(seconds: conversationDuration));
     
     final matchData = {
@@ -205,11 +206,11 @@ class SimpleMatching {
     // Update user statuses to 'in_conversation' (replacing AdminService.updateUserStatus)
     await _firestore.collection('users').doc(currentUserId).update({
       'status': 'in_conversation',
-      'lastActive': FieldValue.serverTimestamp(),
+      'lastActiveTimestamp': FieldValue.serverTimestamp(),
     });
     await _firestore.collection('users').doc(matchedUserId).update({
       'status': 'in_conversation',
-      'lastActive': FieldValue.serverTimestamp(),
+      'lastActiveTimestamp': FieldValue.serverTimestamp(),
     });
     
     // Prepare user-specific match data
@@ -257,6 +258,7 @@ class SimpleMatching {
       'isWaiting': false,
       'isInConversation': true,
       'status': 'in_conversation',
+      'lastActiveTimestamp': FieldValue.serverTimestamp(),
     });
     
     batch.update(_firestore.collection('users').doc(matchedUserId), {
@@ -264,6 +266,7 @@ class SimpleMatching {
       'isWaiting': false,
       'isInConversation': true,
       'status': 'in_conversation',
+      'lastActiveTimestamp': FieldValue.serverTimestamp(),
     });
     
     await batch.commit();
@@ -283,9 +286,12 @@ class SimpleMatching {
   static List<String> _extractQuestions(Map<String, dynamic> userData) {
     final questions = <String>[];
     
+    // Include all question sets
     questions.addAll(_safeExtractStringList(userData, 'questionSet1'));
     questions.addAll(_safeExtractStringList(userData, 'questionSet2'));
+    questions.addAll(_safeExtractStringList(userData, 'questionSet3'));
     
+    print("DEBUG: Extracted questions from all sets: $questions");
     return questions;
   }
 
@@ -329,7 +335,7 @@ class SimpleMatching {
   static Future<void> resetUserForMatching(String userId) async {
     await _firestore.collection('users').doc(userId).update({
       'status': 'waiting',
-      'lastActive': FieldValue.serverTimestamp(),
+      'lastActiveTimestamp': FieldValue.serverTimestamp(),
       'isWaiting': true,
       'isInConversation': false,
       'matchData': FieldValue.delete(),
@@ -340,7 +346,7 @@ class SimpleMatching {
   static Future<void> cleanupUserStatus(String userId) async {
     await _firestore.collection('users').doc(userId).update({
       'status': 'offline',
-      'lastActive': FieldValue.serverTimestamp(),
+      'lastActiveTimestamp': FieldValue.serverTimestamp(),
       'isWaiting': false,
       'isInConversation': false,
       'matchData': FieldValue.delete(),
@@ -352,7 +358,7 @@ class SimpleMatching {
     required String matchId,
     required VoidCallback onTimeUp,
   }) {
-    final duration = Duration(seconds: 300); // 5 minutes
+    final duration = Duration(seconds: 12); // 12 seconds for testing
     
     print('SimpleMatching: Starting conversation timer for ${duration.inSeconds} seconds');
     
@@ -429,4 +435,8 @@ class SimpleMatching {
   // static double _calculateQuestionCompatibility(List<String> questions1, List<String> questions2) {
   //   // Implement question-based scoring logic
   // }
+
+  /// Public wrapper for testing purposes
+  @visibleForTesting
+  static List<String> extractQuestionsPublic(Map<String, dynamic> userData) => _extractQuestions(userData);
 } 

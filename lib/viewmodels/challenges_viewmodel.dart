@@ -7,14 +7,6 @@ class ChallengesViewModel extends ChangeNotifier {
   final SimpleAuthManager _authManager = SimpleAuthManager();
   ChallengesModel _challengesModel = const ChallengesModel();
 
-  // TODO: FUTURE FEATURE - Add editing mode support for returning users
-  // This would require:
-  // - bool _isEditMode = false; // Track if we're editing existing data vs initial setup
-  // - loadExistingChallenges() method to populate current selections when editing
-  // - updateExistingChallenges() method that updates rather than creates new data
-  // - Different UI flow for editing (show current selections, allow changes, save updates)
-  // - Navigation back to dashboard after editing vs continuing onboarding flow
-
   ChallengesModel get challengesModel => _challengesModel;
   int get currentSet => _challengesModel.currentSet;
   List<String> get currentQuestions => _challengesModel.currentQuestions;
@@ -47,72 +39,87 @@ class ChallengesViewModel extends ChangeNotifier {
     return _challengesModel.isQuestionSelected(questionId);
   }
 
+  // REFACTORED: Simplified toggleQuestion using helper methods
   void toggleQuestion(String questionId) {
-    // Get the database value for this question
     final dbValue = _getDbValueForId(questionId);
-    
-    List<String> updatedQuestions;
-    
-    if (_challengesModel.currentSet == 1) {
-      updatedQuestions = List.from(_challengesModel.set1Questions);
-      if (updatedQuestions.contains(dbValue)) {
-        updatedQuestions.remove(dbValue);
-      } else {
-        updatedQuestions.add(dbValue);
-      }
-      
-      _updateState(_challengesModel.copyWith(
-        set1Questions: updatedQuestions,
-        errorMessage: null,
-      ));
-    } else {
-      updatedQuestions = List.from(_challengesModel.set2Questions);
-      if (updatedQuestions.contains(dbValue)) {
-        updatedQuestions.remove(dbValue);
-      } else {
-        updatedQuestions.add(dbValue);
-      }
-      
-      _updateState(_challengesModel.copyWith(
-        set2Questions: updatedQuestions,
-        errorMessage: null,
-      ));
-    }
+    final updatedQuestions = _toggleQuestionInList(_getCurrentQuestionsList(), dbValue);
+    _updateCurrentQuestionsList(updatedQuestions);
     
     print("Question toggled: $questionId -> $dbValue");
     print("Current set ${_challengesModel.currentSet} questions: $updatedQuestions");
   }
 
+  // REFACTORED: Helper to get current questions list by set
+  List<String> _getCurrentQuestionsList() {
+    switch (_challengesModel.currentSet) {
+      case 1: return _challengesModel.set1Questions;
+      case 2: return _challengesModel.set2Questions;
+      case 3: return _challengesModel.set3Questions;
+      default: return [];
+    }
+  }
+
+  // REFACTORED: Generic helper to toggle question in any list
+  List<String> _toggleQuestionInList(List<String> questions, String dbValue) {
+    final updatedQuestions = List<String>.from(questions);
+    if (updatedQuestions.contains(dbValue)) {
+      updatedQuestions.remove(dbValue);
+    } else {
+      updatedQuestions.add(dbValue);
+    }
+    return updatedQuestions;
+  }
+
+  // REFACTORED: Helper to update current questions list based on set
+  void _updateCurrentQuestionsList(List<String> updatedQuestions) {
+    switch (_challengesModel.currentSet) {
+      case 1:
+        _updateState(_challengesModel.copyWith(
+          set1Questions: updatedQuestions,
+          errorMessage: null,
+        ));
+        break;
+      case 2:
+        _updateState(_challengesModel.copyWith(
+          set2Questions: updatedQuestions,
+          errorMessage: null,
+        ));
+        break;
+      case 3:
+        _updateState(_challengesModel.copyWith(
+          set3Questions: updatedQuestions,
+          errorMessage: null,
+        ));
+        break;
+    }
+  }
+
+  // REFACTORED: Using ChallengesModel's improved question lookup
   String _getDbValueForId(String questionId) {
-    final allQuestions = [
-      ...ChallengesModel.set1Available,
-      ...ChallengesModel.set2Available
-    ];
-    return allQuestions.firstWhere((q) => q.id == questionId).dbValue;
+    final question = ChallengesModel.getQuestionById(questionId);
+    if (question == null) {
+      throw ArgumentError('Question ID not found: $questionId');
+    }
+    return question.dbValue;
   }
 
   Future<void> goForward(BuildContext context) async {
     if (!_challengesModel.canGoForward) return;
 
     if (_challengesModel.currentQuestions.isEmpty) {
-      _updateState(_challengesModel.copyWith(
-        errorMessage: "Please select at least one challenge",
-      ));
+      _updateStateWithError("Please select at least one challenge");
       return;
     }
 
     _updateState(_challengesModel.copyWith(isLoading: true, errorMessage: null));
 
     try {
-      // Save current set data
-      final dataKey = 'questionSet${_challengesModel.currentSet}';
+      // REFACTORED: Using helper method for data key generation
+      final dataKey = _generateDataKey(_challengesModel.currentSet);
       bool success = await _authManager.saveUserData(dataKey, _challengesModel.currentQuestions);
       
       if (!success) {
-        _updateState(_challengesModel.copyWith(
-          isLoading: false,
-          errorMessage: "Failed to save your selections. Please try again.",
-        ));
+        _updateStateWithError("Failed to save your selections. Please try again.");
         return;
       }
 
@@ -127,11 +134,13 @@ class ChallengesViewModel extends ChangeNotifier {
         ));
         print("Navigating to Question Set 2");
       } else {
-        // Complete the flow
+        // REFACTORED: Using helper method for completion state
+        final completionState = _generateCompletionState(_challengesModel.currentSet);
         _updateState(_challengesModel.copyWith(
           isLoading: false,
-          set1Completed: _challengesModel.currentSet == 1,
-          set2Completed: _challengesModel.currentSet == 2,
+          set1Completed: completionState.set1Completed,
+          set2Completed: completionState.set2Completed,
+          set3Completed: completionState.set3Completed,
         ));
         
         print("Completing challenges flow, navigating to Loading");
@@ -143,10 +152,7 @@ class ChallengesViewModel extends ChangeNotifier {
 
     } catch (e) {
       print("Error saving question set: $e");
-      _updateState(_challengesModel.copyWith(
-        isLoading: false,
-        errorMessage: "Error: $e",
-      ));
+      _updateStateWithError("Error: $e");
     }
   }
 
@@ -159,7 +165,7 @@ class ChallengesViewModel extends ChangeNotifier {
 
     // Clear current set data and go back to set 1
     if (_challengesModel.currentSet == 2) {
-      await _authManager.clearUserData('questionSet2');
+      await _authManager.clearUserData(_generateDataKey(2));
       _updateState(_challengesModel.copyWith(
         currentSet: 1,
         set2Questions: [],
@@ -181,12 +187,51 @@ class ChallengesViewModel extends ChangeNotifier {
   }
 
   Future<void> cleanup() async {
-    // Clear any incomplete data on dispose
-    if (!_challengesModel.set1Completed) {
-      await _authManager.clearUserData('questionSet1');
-    }
-    if (!_challengesModel.set2Completed) {
-      await _authManager.clearUserData('questionSet2');
+    // REFACTORED: Using helper method and loop for cleanup
+    final incompleteSets = _getIncompleteSets();
+    for (final setNumber in incompleteSets) {
+      await _authManager.clearUserData(_generateDataKey(setNumber));
     }
   }
+
+  // REFACTORED: Helper methods for common operations
+  void _updateStateWithError(String errorMessage) {
+    _updateState(_challengesModel.copyWith(
+      isLoading: false,
+      errorMessage: errorMessage,
+    ));
+  }
+
+  String _generateDataKey(int setNumber) {
+    return 'questionSet$setNumber';
+  }
+
+  _CompletionState _generateCompletionState(int currentSet) {
+    return _CompletionState(
+      set1Completed: currentSet == 1,
+      set2Completed: currentSet == 2,
+      set3Completed: currentSet == 3,
+    );
+  }
+
+  List<int> _getIncompleteSets() {
+    final incompleteSets = <int>[];
+    if (!_challengesModel.set1Completed) incompleteSets.add(1);
+    if (!_challengesModel.set2Completed) incompleteSets.add(2);
+    if (!_challengesModel.set3Completed) incompleteSets.add(3);
+    return incompleteSets;
+  }
+}
+
+// REFACTORED: Private helper class for completion state
+class _CompletionState {
+  final bool set1Completed;
+  final bool set2Completed;
+  final bool set3Completed;
+
+  const _CompletionState({
+    required this.set1Completed,
+    required this.set2Completed,
+    required this.set3Completed,
+  });
 } 
