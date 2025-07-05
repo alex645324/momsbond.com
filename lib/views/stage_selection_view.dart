@@ -360,7 +360,7 @@ class ResponsiveStageSelection extends StatelessWidget {
   double get verticalPadding   => _deviceValue(screenHeight * 0.08, screenHeight * 0.06, screenHeight * 0.04);
   double get titleFontSize     => _deviceValue(32, 24, 20);
   double get subtitleFontSize  => _deviceValue(16, 14, 11);
-  double get buttonHeight      => _deviceValue(screenHeight * 0.09, screenHeight * 0.10, 65);
+  double get buttonHeight      => _deviceValue(screenHeight * 0.09, screenHeight * 0.10, 70);
   double get buttonSpacing     => _deviceValue(screenHeight * 0.04, screenHeight * 0.03, screenHeight * 0.02);
 
   // Build stage definition list based on current language
@@ -376,8 +376,8 @@ class ResponsiveStageSelection extends StatelessWidget {
   }
 
   // Helper to wrap a button in centered row (used by both layouts)
-  Widget _centeredButton(Widget btn, {int flex = 3}) => Row(
-        children: [const Spacer(), Expanded(flex: flex, child: btn), const Spacer()],
+  Widget _centeredButton(Widget btn, {int flex = 4}) => Row(
+        children: [Expanded(child: btn)],
       );
 
   @override
@@ -413,7 +413,7 @@ class ResponsiveStageSelection extends StatelessWidget {
               Text(
                 L.momStages(context).selectionSubtitle,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFF878787),
                   fontFamily: 'Satoshi',
@@ -421,7 +421,7 @@ class ResponsiveStageSelection extends StatelessWidget {
               ),
 
               // Spacing before buttons - adjusted for desktop
-              SizedBox(height: isDesktop ? screenHeight * 0.15 : screenHeight * 0.08),
+              SizedBox(height: isDesktop ? screenHeight * 0.10 : screenHeight * 0.05),
 
               // Stage buttons
               if (isMobile)
@@ -509,6 +509,10 @@ class ResponsiveStageSelection extends StatelessWidget {
     final dbValue = StageModel.getDatabaseValue(value);
     final isSelected = stageViewModel.isStageSelected(dbValue);
     
+    // Consistent internal padding regardless of text length
+    final horizontalPadding = isDesktop ? 30.0 : (isTablet ? 24.0 : 20.0);
+    final verticalPadding = isDesktop ? 18.0 : (isTablet ? 12.0 : 10.0);
+
     return ShakeAnimationButton(
       onTap: () => stageViewModel.toggleStage(value),
       isEnabled: !stageViewModel.isLoading,
@@ -533,19 +537,26 @@ class ResponsiveStageSelection extends StatelessWidget {
                   ]
                 : null,
           ),
-          child: Center(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontFamily: 'Satoshi',
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                fontSize: isDesktop ? 16 : (isTablet ? 14 : 11),
-                color: isSelected 
-                    ? const Color(0xFF494949)
-                    : const Color(0xFF494949).withOpacity(0.8),
-                height: 1.35,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
+            child: Center(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontFamily: 'Satoshi',
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                  fontSize: isDesktop ? 22 : (isTablet ? 18 : 16),
+                  color: isSelected 
+                      ? const Color(0xFF494949)
+                      : const Color(0xFF494949).withOpacity(0.8),
+                  height: 1.35,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
               ),
-              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -554,7 +565,7 @@ class ResponsiveStageSelection extends StatelessWidget {
   }
 
   Widget buildContinueButton() {
-    final buttonSize = isDesktop ? screenWidth * 0.045 : (isTablet ? screenWidth * 0.06 : screenWidth * 0.1);
+    final buttonSize = isDesktop ? screenWidth * 0.07 : (isTablet ? screenWidth * 0.09 : screenWidth * 0.16);
     final circleHeight = buttonSize * 0.64;
     
     return Builder(

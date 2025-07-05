@@ -172,7 +172,7 @@ class _DashboardViewState extends State<DashboardView> {
                           L.dashboard(context).homebaseTitle,
             style: GoogleFonts.poppins(
               fontSize: 20 * scaleFactor,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF494949),
               height: 1.5,
             ),
@@ -202,16 +202,7 @@ class _DashboardViewState extends State<DashboardView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-                          '${L.dashboard(context).usernamePrefix}${viewModel.username}',
-            style: GoogleFonts.poppins(
-              fontSize: 10 * scaleFactor,
-              fontWeight: FontWeight.w400,
-              color: const Color(0xFF494949),
-            ),
-          ),
-          SizedBox(height: 4 * scaleFactor),
-          Text(
-                          DashboardTexts.instaHandle,
+            '${L.dashboard(context).usernamePrefix}${viewModel.username}',
             style: GoogleFonts.poppins(
               fontSize: 10 * scaleFactor,
               fontWeight: FontWeight.w400,

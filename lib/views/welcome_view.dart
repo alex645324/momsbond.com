@@ -25,7 +25,7 @@ class WelcomeView extends StatelessWidget {
                       style: const TextStyle(
                         fontFamily: "Nunito",
                         fontSize: 20,
-                        fontWeight: FontWeight.normal,
+                        fontWeight: FontWeight.w600,
                         color: Color(0xFF574F4E),
                       ),
                     ),

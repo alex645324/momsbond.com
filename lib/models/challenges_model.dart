@@ -233,15 +233,6 @@ class ChallengesModel {
       alignment: Alignment.centerRight,
     ),
     ChallengeQuestion(
-      id: "financial_worries",
-      text: ChallengeTexts.financialWorries,
-      dbValue: ChallengeTexts.financialWorriesDb,
-      backgroundColor: Color(0xFFEDE4C6),
-      width: 300,
-      height: 75,
-      alignment: Alignment.centerLeft,
-    ),
-    ChallengeQuestion(
       id: "relationship_changes",
       text: ChallengeTexts.relationshipChanges,
       dbValue: ChallengeTexts.relationshipChangesDb,

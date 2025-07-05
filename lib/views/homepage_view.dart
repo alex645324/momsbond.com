@@ -179,8 +179,8 @@ class _HomepageViewState extends State<HomepageView> {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontFamily: "Nuosu SIL",
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
                         color: Color(0xFF574F4E),
                       ),
                     ),

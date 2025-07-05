@@ -133,6 +133,8 @@ class ResponsiveChallengesLayout extends StatelessWidget {
     required this.challengesViewModel,
   }) : super(key: key);
 
+  bool get isTablet => !isDesktop && !isMobile;
+
   @override
   Widget build(BuildContext context) {
     final scaleFactor = isDesktop ? 0.8 : 1.0;
@@ -191,7 +193,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
     final verticalPadding = isDesktop ? screenHeight * 0.08 : screenHeight * 0.04;
     final titleFontSize = isDesktop ? 32.0 : 20.0;
     final subtitleFontSize = isDesktop ? 16.0 : 11.0;
-    final buttonHeight = isDesktop ? screenHeight * 0.12 : 65.0;
+    final buttonHeight = isDesktop ? screenHeight * 0.12 : 75.0;
 
     return Stack(
       children: [
@@ -211,13 +213,11 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (challengesViewModel.currentSet == 3) ...[
-                      _buildProgressDot(getSize, isActive: challengesViewModel.currentSet == 3),
-                    ] else ...[
-                      _buildProgressDot(getSize, isActive: challengesViewModel.isSet1),
-                      SizedBox(width: getSize(12)),
-                      _buildProgressDot(getSize, isActive: challengesViewModel.isSet2),
-                    ],
+                    _buildProgressDot(getSize, isActive: challengesViewModel.currentSet == 1),
+                    SizedBox(width: getSize(12)),
+                    _buildProgressDot(getSize, isActive: challengesViewModel.currentSet == 2),
+                    SizedBox(width: getSize(12)),
+                    _buildProgressDot(getSize, isActive: challengesViewModel.currentSet == 3),
                   ],
                 ),
 
@@ -229,7 +229,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: "Poppins",
                     fontWeight: FontWeight.w500,
-                    fontSize: subtitleFontSize,
+                    fontSize: isDesktop ? 20 : (isTablet ? 18 : 16),
                     color: const Color(0xFF777673),
                     height: 1.5,
                   ),
@@ -245,7 +245,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                       : L.challenges(context).generalTitle,
                   style: const TextStyle(
                     fontFamily: "Poppins",
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     fontSize: 28,
                     color: Color(0xFF494949),
                     height: 1.5,
@@ -294,9 +294,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
         for (var i = 0; i < challengesViewModel.currentAvailableQuestions.length; i++) ...[
           Row(
             children: [
-              const Spacer(),
               Expanded(
-                flex: 3,
                 child: Container(
                   height: buttonHeight,
                   child: buildChallengeButton(
@@ -306,7 +304,6 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                   ),
                 ),
               ),
-              const Spacer(),
             ],
           ),
           if (i < challengesViewModel.currentAvailableQuestions.length - 1)
@@ -452,9 +449,9 @@ class ResponsiveChallengesLayout extends StatelessWidget {
   ) {
     final isSelected = challengesViewModel.isQuestionSelected(question.id);
     bool _isHovered = false;
-    final buttonTextSize = isDesktop ? 16.0 : 11.0;
-    final verticalPadding = isDesktop ? getSize(16) : getSize(8);
-    final horizontalPadding = isDesktop ? getSize(24) : getSize(16);
+    final buttonTextSize = isDesktop ? 22.0 : (isTablet ? 18.0 : 16.0);
+    final verticalPadding = isDesktop ? getSize(20) : getSize(12);
+    final horizontalPadding = isDesktop ? getSize(30) : getSize(20);
     
     return StatefulBuilder(
       builder: (context, setState) => MouseRegion(
@@ -503,6 +500,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                         height: 1.35,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 2,
                     ),
                   ),
                 ),
@@ -515,7 +513,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
   }
 
   Widget buildNavigationControl(BuildContext context, double Function(double) getSize) {
-    final buttonSize = isDesktop ? screenWidth * 0.045 : screenWidth * 0.1;
+    final buttonSize = isDesktop ? screenWidth * 0.08 : screenWidth * 0.17;
     final circleHeight = buttonSize * 0.64;
     
     return MouseRegion(

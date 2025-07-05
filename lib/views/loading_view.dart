@@ -339,7 +339,7 @@ class _LoadingViewState extends State<LoadingView> with SingleTickerProviderStat
                               L.ui(context).findingConnection,
                               style: GoogleFonts.poppins(
                                 fontSize: titleSize,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                                 color: const Color(0xFF494949),
                                 height: 1.5,
                               ),

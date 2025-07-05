@@ -149,9 +149,6 @@ class DashboardTexts with _TextSelector {
   
   // User info (placeholders)
   static const String usernamePrefix = 'username: ';
-  static const String instaHandle = 'insta: realconnection.com_';
-  
-  // Default avatar letter
   static const String defaultAvatarLetter = 'U';
 }
 
@@ -207,7 +204,7 @@ class HomepageTexts with _TextSelector {
   const HomepageTexts();
   
   // Main description
-  static const String mainDescription = 'Welcome to MomsBond\nConnect with moms who understand your journey';
+  static const String mainDescription = '';
 }
 
 /// Language selection text
@@ -334,8 +331,6 @@ class DashboardTextsEs with _TextSelector {
   static const String findNewConnection = 'buscar nueva conexión :)';
 
   static const String usernamePrefix = 'usuario: ';
-  static const String instaHandle = 'insta: realconnection.com_';
-
   static const String defaultAvatarLetter = 'U';
 }
 
@@ -382,6 +377,6 @@ class UITextsEs with _TextSelector {
 class HomepageTextsEs with _TextSelector {
   const HomepageTextsEs();
 
-  static const String mainDescription = 'Estamos aquí para ayudarte a conectar con otras madres en tu etapa.';
+  static const String mainDescription = '';
   static const String getStarted = 'Comenzar';
 } 
