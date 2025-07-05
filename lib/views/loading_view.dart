@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../viewmodels/loading_viewmodel.dart';
 import 'dashboard_view.dart';
+import '../config/locale_helper.dart';
 
 class LoadingView extends StatefulWidget {
   const LoadingView({Key? key}) : super(key: key);
@@ -335,7 +336,7 @@ class _LoadingViewState extends State<LoadingView> with SingleTickerProviderStat
                         child: Column(
                           children: [
                             Text(
-                              viewModel.loadingText,
+                              L.ui(context).findingConnection,
                               style: GoogleFonts.poppins(
                                 fontSize: titleSize,
                                 fontWeight: FontWeight.w500,
@@ -393,7 +394,7 @@ class _LoadingViewState extends State<LoadingView> with SingleTickerProviderStat
                           iconSize: isDesktop ? 28 : (isTablet ? 24 : 20 * scaleFactor),
                           icon: const Icon(Icons.close),
                           color: const Color(0xFF494949),
-                          tooltip: 'Go to dashboard',
+                          tooltip: L.ui(context).goToDashboard,
                           onPressed: () {
                             Navigator.pushReplacement(
                               context,

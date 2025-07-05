@@ -11,6 +11,7 @@ import 'viewmodels/stage_viewmodel.dart';
 import 'viewmodels/challenges_viewmodel.dart';
 import 'viewmodels/dashboard_viewmodel.dart';
 import 'viewmodels/messages_viewmodel.dart';
+import 'viewmodels/language_viewmodel.dart';
 import 'views/homepage_view.dart';
 import 'views/dashboard_view.dart';
 import 'views/loading_view.dart';
@@ -18,6 +19,7 @@ import 'views/login_view.dart';
 import 'views/stage_selection_view.dart';
 import 'views/challenges_view.dart';
 import 'config/app_config.dart';
+import 'config/locale_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +56,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChallengesViewModel()),
         ChangeNotifierProvider(create: (_) => DashboardViewModel()),
         ChangeNotifierProvider(create: (_) => MessagesViewModel()),
+        ChangeNotifierProvider(create: (_) => LanguageViewModel()..loadFromPrefs()),
       ],
       child: MaterialApp(
         title: 'Mother Connection Platform',
@@ -171,7 +174,7 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   Widget build(BuildContext context) {
     if (_isInitializing) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Color(0xFFF2EDE7),
         body: Center(
           child: Column(
@@ -182,7 +185,7 @@ class _AppInitializerState extends State<AppInitializer> {
               ),
               SizedBox(height: 20),
               Text(
-                UITexts.initializingApp,
+                L.ui(context).initializingApp,
                 style: TextStyle(
                   fontFamily: "Nuosu SIL",
                   fontSize: 14,

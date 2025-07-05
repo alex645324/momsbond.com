@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../Database_logic/simple_auth_manager.dart';
 import 'stage_selection_view.dart';
 import '../config/app_config.dart';
+import '../config/locale_helper.dart';
 
 // Circle configuration class for decorative elements
 class CircleConfig {
@@ -128,7 +129,7 @@ class _LoginViewState extends State<LoginView> {
   Future<void> _handleSubmit() async {
     if (_usernameController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
       setState(() {
-        _errorMessage = AuthTexts.fillAllFields;
+        _errorMessage = L.auth(context).fillAllFields;
       });
       return;
     }
@@ -165,7 +166,7 @@ class _LoginViewState extends State<LoginView> {
         } else {
           setState(() {
             if (result.message.contains("Username not found")) {
-              _errorMessage = AuthTexts.usernameNotFoundError(result.message);
+              _errorMessage = L.auth(context).usernameNotFoundError(result.message);
             } else {
               _errorMessage = result.message;
             }
@@ -174,7 +175,7 @@ class _LoginViewState extends State<LoginView> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = AuthTexts.genericError;
+        _errorMessage = L.auth(context).genericError;
       });
     }
 
@@ -221,7 +222,7 @@ class _LoginViewState extends State<LoginView> {
       
       // Show helpful message when switching to sign-in
       if (!_isSignUp) {
-        _showInfoMessage(AuthTexts.signInPrompt);
+        _showInfoMessage(L.auth(context).signInPrompt);
       }
     });
   }
@@ -319,7 +320,7 @@ class _LoginViewState extends State<LoginView> {
       padding: const EdgeInsets.all(20),
       child: Center(
         child: Text(
-          _isSignUp ? AuthTexts.createAccount : AuthTexts.welcomeBack,
+          _isSignUp ? L.auth(context).createAccount : L.auth(context).welcomeBack,
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -353,7 +354,7 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 child: Center(
                   child: Text(
-                    AuthTexts.signUp,
+                    L.auth(context).signUp,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -377,7 +378,7 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 child: Center(
                   child: Text(
-                    AuthTexts.signIn,
+                    L.auth(context).signIn,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -423,7 +424,7 @@ class _LoginViewState extends State<LoginView> {
                 color: const Color(0xFF574F4E),
               ),
               decoration: InputDecoration(
-                hintText: AuthTexts.usernameHint,
+                hintText: L.auth(context).usernameHint,
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 14,
                   color: const Color(0xFF999999),
@@ -467,7 +468,7 @@ class _LoginViewState extends State<LoginView> {
                 color: const Color(0xFF574F4E),
               ),
               decoration: InputDecoration(
-                hintText: AuthTexts.passwordHint,
+                hintText: L.auth(context).passwordHint,
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 14,
                   color: const Color(0xFF999999),
@@ -532,7 +533,7 @@ class _LoginViewState extends State<LoginView> {
           ),
           const SizedBox(width: 10),
           Text(
-            AuthTexts.keepSignedIn,
+            L.auth(context).keepSignedIn,
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: const Color(0xFF574F4E),
@@ -607,7 +608,7 @@ class _LoginViewState extends State<LoginView> {
                     ),
                   )
                 : Text(
-                    _isSignUp ? AuthTexts.createAccount : AuthTexts.signIn,
+                    _isSignUp ? L.auth(context).createAccount : L.auth(context).signIn,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

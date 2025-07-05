@@ -7,6 +7,7 @@ import '../Templates/chat_text_field.dart';
 import 'dashboard_view.dart';
 import 'package:flutter/animation.dart';
 import '../config/app_config.dart';
+import '../config/locale_helper.dart';
 
 // Holds width / scale data calculated from screen width
 class _LayoutSizes {
@@ -192,14 +193,14 @@ class _MessagesViewState extends State<MessagesView> {
             ),
             const SizedBox(height: 16),
             Text(
-              ChatTexts.chatError,
+              L.chat(context).chatError,
               style: _txt(20, 1, FontWeight.w600, const Color(0xFF494949)),
             ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                viewModel.errorMessage ?? ChatTexts.errorOccurred,
+                viewModel.errorMessage ?? L.chat(context).errorOccurred,
                 textAlign: TextAlign.center,
                 style: _txt(14, 1, FontWeight.normal, const Color(0xFF494949)),
               ),
@@ -207,7 +208,7 @@ class _MessagesViewState extends State<MessagesView> {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => viewModel.clearError(),
-              child: Text(ChatTexts.retryButton),
+              child: Text(L.chat(context).retryButton),
             ),
           ],
         ),
@@ -249,7 +250,7 @@ class _MessagesViewState extends State<MessagesView> {
                             : (isTablet ? 24 : 20 * scaleFactor),
                         icon: const Icon(Icons.close),
                         color: const Color(0xFF494949),
-                        tooltip: UITexts.goToDashboard,
+                        tooltip: L.ui(context).goToDashboard,
                         onPressed: () {
                           final viewModel = Provider.of<MessagesViewModel>(context, listen: false);
                           viewModel.endConversationEarly();
@@ -320,7 +321,7 @@ class _MessagesViewState extends State<MessagesView> {
     if (viewModel.messages.isEmpty) {
       return Center(
         child: Text(
-          viewModel.messagesModel.starterText ?? ChatTexts.defaultStarterText,
+          _localizedStarterText(context, viewModel.messagesModel.starterText),
           textAlign: TextAlign.center,
           style: _txt(16, scaleFactor, FontWeight.w400, const Color(0xFF878787)),
         ),
@@ -399,7 +400,7 @@ class _MessagesViewState extends State<MessagesView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  ChatTexts.conversationEnded,
+                  L.chat(context).conversationEnded,
                   textAlign: TextAlign.center,
                   style: _txt(26, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                 ),
@@ -423,7 +424,7 @@ class _MessagesViewState extends State<MessagesView> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          ChatTexts.feedbackQuestion,
+          L.chat(context).feedbackQuestion,
           style: _txt(14, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
         ),
         SizedBox(height: 32 * scaleFactor),
@@ -435,7 +436,7 @@ class _MessagesViewState extends State<MessagesView> {
               const CircularProgressIndicator(),
               SizedBox(height: 12 * scaleFactor),
               Text(
-                ChatTexts.savingFeedback,
+                L.chat(context).savingFeedback,
                 style: _txt(12, scaleFactor, FontWeight.normal, const Color(0xFF494949)),
               ),
             ],
@@ -472,7 +473,7 @@ class _MessagesViewState extends State<MessagesView> {
                       ),
                       child: Center(
                         child: Text(
-                          ChatTexts.feedbackYes,
+                          L.chat(context).feedbackYes,
                           style: _txt(14, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                         ),
                       ),
@@ -507,7 +508,7 @@ class _MessagesViewState extends State<MessagesView> {
                       ),
                       child: Center(
                         child: Text(
-                          ChatTexts.feedbackNo,
+                          L.chat(context).feedbackNo,
                           style: _txt(14, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                         ),
                       ),
@@ -532,12 +533,12 @@ class _MessagesViewState extends State<MessagesView> {
         ),
         SizedBox(height: 16 * scaleFactor),
         Text(
-          ChatTexts.thanksForFeedback,
+          L.chat(context).thanksForFeedback,
           style: _txt(14, scaleFactor, FontWeight.w500, const Color(0xFF494949)),
         ),
         SizedBox(height: 8 * scaleFactor),
         Text(
-          ChatTexts.enjoyedConnecting,
+          L.chat(context).enjoyedConnecting,
           textAlign: TextAlign.center,
           style: _txt(11, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
         ),
@@ -557,7 +558,7 @@ class _MessagesViewState extends State<MessagesView> {
             ),
             child: Center(
               child: Text(
-                ChatTexts.continueButton,
+                L.chat(context).continueButton,
                 style: _txt(12, scaleFactor, FontWeight.w500, Colors.white),
               ),
             ),
@@ -565,6 +566,59 @@ class _MessagesViewState extends State<MessagesView> {
         ),
       ],
     );
+  }
+
+  String _localizedStarterText(BuildContext context, String? original) {
+    if (original != null && original.startsWith('your connection also struggles with')) {
+      // Extract topic
+      final idx = original.indexOf('\n"');
+      if (idx != -1) {
+        final topic = original.substring(idx + 2).replaceAll('"', '');
+        final localizedTopic = _translateTopic(context, topic);
+        return L.chat(context).connectionAlsoStrugglesWith(localizedTopic);
+      }
+    }
+    if (original != null && original.isNotEmpty) return original;
+    return L.chat(context).defaultStarterText;
+  }
+
+  String _translateTopic(BuildContext context, String topic) {
+    final lc = L.challenges(context);
+    // Map database values to localized display strings
+    switch (topic) {
+      case ChallengeTexts.bodyChangesDb:
+      case ChallengeTexts.bodyChanges:
+        return lc.bodyChanges;
+      case ChallengeTexts.depressionAnxietyDb:
+      case ChallengeTexts.depressionAnxiety:
+        return lc.depressionAnxiety;
+      case ChallengeTexts.lonelinessDb:
+      case ChallengeTexts.loneliness:
+        return lc.loneliness;
+      case ChallengeTexts.lostIdentityDb:
+      case ChallengeTexts.lostIdentity:
+        return lc.lostIdentity;
+      case ChallengeTexts.judgingParentingDb:
+      case ChallengeTexts.judgingParenting:
+        return lc.judgingParenting;
+      case ChallengeTexts.fearSickDb:
+      case ChallengeTexts.fearSick:
+        return lc.fearSick;
+      case ChallengeTexts.fertilityStressDb:
+      case ChallengeTexts.fertilityStress:
+        return lc.fertilityStress;
+      case ChallengeTexts.socialPressureDb:
+      case ChallengeTexts.socialPressure:
+        return lc.socialPressure;
+      case ChallengeTexts.financialWorriesDb:
+      case ChallengeTexts.financialWorries:
+        return lc.financialWorries;
+      case ChallengeTexts.relationshipChangesDb:
+      case ChallengeTexts.relationshipChanges:
+        return lc.relationshipChanges;
+      default:
+        return topic; // fallback if unknown
+    }
   }
 }
 

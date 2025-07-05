@@ -8,6 +8,7 @@ import '../views/messages_view.dart';
 import '../views/loading_view.dart';
 import 'dart:math' as math;
 import '../config/app_config.dart';
+import '../config/locale_helper.dart';
 
 // TODO: FUTURE FEATURE - Create ProfileEditView for returning users
 // This new view would allow users to:
@@ -168,7 +169,7 @@ class _DashboardViewState extends State<DashboardView> {
           
           // Welcome message with username
           Text(
-                          DashboardTexts.homebaseTitle,
+                          L.dashboard(context).homebaseTitle,
             style: GoogleFonts.poppins(
               fontSize: 20 * scaleFactor,
               fontWeight: FontWeight.w500,
@@ -179,7 +180,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           SizedBox(height: 8 * scaleFactor),
           Text(
-                          DashboardTexts.homebaseSubtitle,
+                          L.dashboard(context).homebaseSubtitle,
             style: GoogleFonts.poppins(
               fontSize: 11 * scaleFactor,
               fontWeight: FontWeight.w400,
@@ -201,7 +202,7 @@ class _DashboardViewState extends State<DashboardView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-                          '${DashboardTexts.usernamePrefix}${viewModel.username}',
+                          '${L.dashboard(context).usernamePrefix}${viewModel.username}',
             style: GoogleFonts.poppins(
               fontSize: 10 * scaleFactor,
               fontWeight: FontWeight.w400,
@@ -395,7 +396,7 @@ class _DashboardViewState extends State<DashboardView> {
                     ),
                     SizedBox(height: 2 * scaleFactor),
                     Text(
-                      connection.statusText,
+                      _localizedStatusText(context, connection.statusText),
                       style: GoogleFonts.poppins(
                         fontSize: 10 * scaleFactor,
                         color: connection.isInWarningState 
@@ -451,7 +452,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           SizedBox(height: 16 * scaleFactor),
           Text(
-                          DashboardTexts.noConnections,
+                          L.dashboard(context).noConnections,
             style: GoogleFonts.poppins(
               fontSize: 18 * scaleFactor,
               color: const Color(0xFF494949),
@@ -461,7 +462,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           SizedBox(height: 8 * scaleFactor),
           Text(
-                          DashboardTexts.firstConnectionPrompt,
+                          L.dashboard(context).firstConnectionPrompt,
             style: GoogleFonts.poppins(
               fontSize: 14 * scaleFactor,
               color: const Color(0xFF777673),
@@ -527,7 +528,7 @@ class _DashboardViewState extends State<DashboardView> {
                         ),
                       )
                     : Text(
-                        DashboardTexts.findNewConnection,
+                        L.dashboard(context).findNewConnection,
                         style: TextStyle(
                           fontFamily: 'Satoshi',
                           fontSize: 16 * scaleFactor,
@@ -541,6 +542,13 @@ class _DashboardViewState extends State<DashboardView> {
         ),
       ),
     );
+  }
+
+  String _localizedStatusText(BuildContext context, String text) {
+    if (text == 'tap to talk again') {
+      return L.dashboard(context).tapToTalkAgain;
+    }
+    return text; // other statuses stay the same for now
   }
 }
 
@@ -576,7 +584,7 @@ class InvitationDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       title: Text(
-        UITexts.chatInvitation,
+        L.ui(context).chatInvitation,
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,
@@ -587,7 +595,7 @@ class InvitationDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '${invitation.senderName} ${UITexts.wantsToChat}',
+            '${invitation.senderName} ${L.ui(context).wantsToChat}',
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: const Color(0xFF494949),
@@ -596,7 +604,7 @@ class InvitationDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            UITexts.startConversationPrompt,
+            L.ui(context).startConversationPrompt,
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: const Color(0xFF777673),
@@ -607,7 +615,7 @@ class InvitationDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          child: Text(UITexts.decline),
+          child: Text(L.ui(context).decline),
           onPressed: onDecline,
         ),
         ElevatedButton(
@@ -619,7 +627,7 @@ class InvitationDialog extends StatelessWidget {
             ),
           ),
           child: Text(
-            UITexts.accept,
+            L.ui(context).accept,
             style: GoogleFonts.poppins(
               color: const Color(0xFF494949),
               fontWeight: FontWeight.w500,

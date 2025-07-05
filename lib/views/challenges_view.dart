@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../viewmodels/challenges_viewmodel.dart';
 import '../models/challenges_model.dart';
 import '../config/app_config.dart';
+import '../config/locale_helper.dart';
 
 // Circle configurations for decorative background - Mobile
 const mobileCircles = [
@@ -240,8 +241,8 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                 // Main title
                 Text(
                   challengesViewModel.currentSet == 3 
-                      ? ChallengeTexts.tryingTitle
-                      : ChallengeTexts.generalTitle,
+                      ? L.challenges(context).tryingTitle
+                      : L.challenges(context).generalTitle,
                   style: const TextStyle(
                     fontFamily: "Poppins",
                     fontWeight: FontWeight.w500,
@@ -262,8 +263,8 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                     ),
                     child: SingleChildScrollView(
                       child: isMobile 
-                          ? buildMobileLayout(getSize, buttonHeight)
-                          : buildDesktopLayout(getSize, buttonHeight),
+                          ? buildMobileLayout(context, getSize, buttonHeight)
+                          : buildDesktopLayout(context, getSize, buttonHeight),
                     ),
                   ),
                 ),
@@ -287,7 +288,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
     );
   }
 
-  Widget buildMobileLayout(double Function(double) getSize, double buttonHeight) {
+  Widget buildMobileLayout(BuildContext context, double Function(double) getSize, double buttonHeight) {
     return Column(
       children: [
         for (var i = 0; i < challengesViewModel.currentAvailableQuestions.length; i++) ...[
@@ -299,6 +300,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                 child: Container(
                   height: buttonHeight,
                   child: buildChallengeButton(
+                    context,
                     getSize,
                     challengesViewModel.currentAvailableQuestions[i],
                   ),
@@ -315,7 +317,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
     );
   }
 
-  Widget buildDesktopLayout(double Function(double) getSize, double buttonHeight) {
+  Widget buildDesktopLayout(BuildContext context, double Function(double) getSize, double buttonHeight) {
     final questions = challengesViewModel.currentAvailableQuestions;
     final hasThreeOptions = questions.length == 3;
     final hasFourOptions = questions.length == 4;
@@ -330,6 +332,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
               child: Container(
                 height: buttonHeight,
                 child: buildChallengeButton(
+                  context,
                   getSize,
                   questions[0],
                 ),
@@ -340,6 +343,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
               child: Container(
                 height: buttonHeight,
                 child: buildChallengeButton(
+                  context,
                   getSize,
                   questions[1],
                 ),
@@ -357,6 +361,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
             child: Container(
               height: buttonHeight,
               child: buildChallengeButton(
+                context,
                 getSize,
                 questions[2],
               ),
@@ -370,6 +375,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                 child: Container(
                   height: buttonHeight,
                   child: buildChallengeButton(
+                    context,
                     getSize,
                     questions[2],
                   ),
@@ -380,6 +386,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                 child: Container(
                   height: buttonHeight,
                   child: buildChallengeButton(
+                    context,
                     getSize,
                     questions[3],
                   ),
@@ -396,6 +403,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                   child: Container(
                     height: buttonHeight,
                     child: buildChallengeButton(
+                      context,
                       getSize,
                       questions[row * 2],
                     ),
@@ -407,6 +415,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                       ? Container(
                           height: buttonHeight,
                           child: buildChallengeButton(
+                            context,
                             getSize,
                             questions[row * 2 + 1],
                           ),
@@ -437,6 +446,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
   }
 
   Widget buildChallengeButton(
+    BuildContext context,
     double Function(double) getSize,
     ChallengeQuestion question,
   ) {
@@ -482,7 +492,7 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                       vertical: verticalPadding,
                     ),
                     child: Text(
-                      question.text,
+                      _localizedQuestionText(context, question.id),
                       style: TextStyle(
                         fontFamily: "Satoshi",
                         fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
@@ -573,6 +583,35 @@ class ResponsiveChallengesLayout extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Returns the localized text for a given question ID based on current language
+  String _localizedQuestionText(BuildContext context, String questionId) {
+    final lc = L.challenges(context);
+    switch (questionId) {
+      case 'body_changes':
+        return lc.bodyChanges;
+      case 'depression_anxiety':
+        return lc.depressionAnxiety;
+      case 'loneliness':
+        return lc.loneliness;
+      case 'lost_identity':
+        return lc.lostIdentity;
+      case 'judging_parenting':
+        return lc.judgingParenting;
+      case 'fear_sick':
+        return lc.fearSick;
+      case 'fertility_stress':
+        return lc.fertilityStress;
+      case 'social_pressure':
+        return lc.socialPressure;
+      case 'financial_worries':
+        return lc.financialWorries;
+      case 'relationship_changes':
+        return lc.relationshipChanges;
+      default:
+        return questionId;
+    }
   }
 }
 

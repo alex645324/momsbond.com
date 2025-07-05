@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Database_logic/simple_auth_manager.dart';
 import '../models/auth_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final SimpleAuthManager _authManager = SimpleAuthManager();
@@ -33,6 +34,15 @@ class AuthViewModel extends ChangeNotifier {
         
         // Check if user has completed onboarding
         final hasCompletedOnboarding = await _authManager.hasCompletedOnboarding();
+        
+        // Sync language preference to user profile (if missing)
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final langCode = prefs.getString('pref_language');
+          if (langCode != null) {
+            await _authManager.saveUserData('language', langCode);
+          }
+        } catch (_) {}
         
         _updateState(_authModel.copyWith(
           userId: _authManager.currentUserId,

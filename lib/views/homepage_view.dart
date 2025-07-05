@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import 'login_view.dart';
 import '../config/app_config.dart';
+import '../viewmodels/language_viewmodel.dart';
+import '../config/locale_helper.dart';
 
 // Circle configuration class for decorative elements
 class CircleConfig {
@@ -173,7 +175,7 @@ class _HomepageViewState extends State<HomepageView> {
                   right: 0,
                   child: Center(
                     child: Text(
-                                              HomepageTexts.mainDescription,
+                                              L.homepage(context).mainDescription,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontFamily: "Nuosu SIL",
@@ -185,51 +187,19 @@ class _HomepageViewState extends State<HomepageView> {
                   ),
                 ),
 
-                // Get Started Button (Replaced Google Sign-in)
+                // Language Selection Buttons
                 Positioned(
                   bottom: 60,
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: GestureDetector(
-                      onTap: (viewModel.isLoading || _isNavigating) ? null : _navigateToLogin,
-                      child: Container(
-                        width: 240,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: (viewModel.isLoading || _isNavigating) 
-                              ? const Color(0xFF574F4E).withOpacity(0.6)
-                              : const Color(0xFF574F4E),
-                          borderRadius: BorderRadius.circular(25),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color.fromRGBO(0, 0, 0, 0.25),
-                              offset: Offset(0, 4),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: (viewModel.isLoading || _isNavigating)
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : Text(
-                                                                     HomepageTexts.getStarted,
-                                  style: const TextStyle(
-                                    fontFamily: "Nuosu SIL",
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ),
-                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildLanguageButton(context, viewModel, 'en', AppTexts.language.english),
+                        const SizedBox(height: 12),
+                        _buildLanguageButton(context, viewModel, 'es', AppTexts.language.spanish),
+                      ],
                     ),
                   ),
                 ),
@@ -285,6 +255,56 @@ class _HomepageViewState extends State<HomepageView> {
           ),
         );
       },
+    );
+  }
+
+  // Helper widget to create language buttons
+  Widget _buildLanguageButton(BuildContext context, AuthViewModel authViewModel, String langCode, String label) {
+    final isDisabled = authViewModel.isLoading || _isNavigating;
+    return GestureDetector(
+      onTap: isDisabled
+          ? null
+          : () {
+              context.read<LanguageViewModel>().setLanguage(langCode);
+              _navigateToLogin();
+            },
+      child: Container(
+        width: 240,
+        height: 50,
+        decoration: BoxDecoration(
+          color: isDisabled
+              ? const Color(0xFF574F4E).withOpacity(0.6)
+              : const Color(0xFF574F4E),
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.25),
+              offset: Offset(0, 4),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Center(
+          child: isDisabled
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: "Nuosu SIL",
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+        ),
+      ),
     );
   }
 } 

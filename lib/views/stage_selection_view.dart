@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../viewmodels/stage_viewmodel.dart';
 import '../models/stage_model.dart';
 import '../config/app_config.dart';
+import '../config/locale_helper.dart';
 
 // Circle configuration class for decorative elements
 class CircleConfig {
@@ -362,14 +363,17 @@ class ResponsiveStageSelection extends StatelessWidget {
   double get buttonHeight      => _deviceValue(screenHeight * 0.09, screenHeight * 0.10, 65);
   double get buttonSpacing     => _deviceValue(screenHeight * 0.04, screenHeight * 0.03, screenHeight * 0.02);
 
-  // REFACTORED: Central stage definition list
-  static final List<_StageDef> _stages = [
-    _StageDef(MomStageTexts.trying,   MomStageTexts.tryingLabel,  Color(0xFFEED5B9)),
-    _StageDef(MomStageTexts.pregnant, MomStageTexts.pregnantLabel,     Color(0xFFEFD4E2)),
-    _StageDef(MomStageTexts.toddler,  MomStageTexts.toddlerLabel,  Color(0xFFEDE4C6)),
-    _StageDef(MomStageTexts.teen,     MomStageTexts.teenLabel,     Color(0xFFD8DAC5)),
-    _StageDef(MomStageTexts.adult,    MomStageTexts.adultLabel,    Color(0xFFBBCAE4)),
-  ];
+  // Build stage definition list based on current language
+  List<_StageDef> _buildStages(BuildContext context) {
+    final t = L.momStages(context);
+    return [
+      _StageDef(t.trying,   t.tryingLabel,   const Color(0xFFEED5B9)),
+      _StageDef(t.pregnant, t.pregnantLabel, const Color(0xFFEFD4E2)),
+      _StageDef(t.toddler,  t.toddlerLabel,  const Color(0xFFEDE4C6)),
+      _StageDef(t.teen,     t.teenLabel,     const Color(0xFFD8DAC5)),
+      _StageDef(t.adult,    t.adultLabel,    const Color(0xFFBBCAE4)),
+    ];
+  }
 
   // Helper to wrap a button in centered row (used by both layouts)
   Widget _centeredButton(Widget btn, {int flex = 3}) => Row(
@@ -378,6 +382,9 @@ class ResponsiveStageSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final stages = _buildStages(context);
+
+    // Stage buttons
     return Stack(
       children: [
         // Background circles
@@ -394,7 +401,7 @@ class ResponsiveStageSelection extends StatelessWidget {
             children: [
               // Main title
               Text(
-                MomStageTexts.selectionTitle,
+                L.momStages(context).selectionTitle,
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
@@ -404,7 +411,7 @@ class ResponsiveStageSelection extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                MomStageTexts.selectionSubtitle,
+                L.momStages(context).selectionSubtitle,
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
@@ -419,10 +426,10 @@ class ResponsiveStageSelection extends StatelessWidget {
               // Stage buttons
               if (isMobile)
                 // Mobile layout - stacked buttons
-                buildMobileButtons()
+                _buildMobileButtons(stages)
               else
                 // Desktop/Tablet layout - 2x2 grid
-                buildDesktopButtons(),
+                _buildDesktopButtons(stages),
             ],
           ),
         ),
@@ -455,38 +462,38 @@ class ResponsiveStageSelection extends StatelessWidget {
     );
   }
 
-  Widget buildMobileButtons() {
+  Widget _buildMobileButtons(List<_StageDef> stages) {
     // REFACTORED: Build column from _stageDefs list dynamically
     final children = <Widget>[];
-    for (var i = 0; i < _stages.length; i++) {
-      final d = _stages[i];
+    for (var i = 0; i < stages.length; i++) {
+      final d = stages[i];
       children.add(_centeredButton(buildStageButton(d.value, d.text, d.color, null)));
-      if (i != _stages.length - 1) children.add(SizedBox(height: buttonSpacing));
+      if (i != stages.length - 1) children.add(SizedBox(height: buttonSpacing));
     }
     return Column(children: children);
   }
 
-  Widget buildDesktopButtons() {
+  Widget _buildDesktopButtons(List<_StageDef> stages) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.15),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // First row – single centred button (trying moms)
-          _centeredButton(buildStageButton(_stages[0].value, _stages[0].text, _stages[0].color, null), flex: 2),
+          _centeredButton(buildStageButton(stages[0].value, stages[0].text, stages[0].color, null), flex: 2),
           SizedBox(height: buttonSpacing),
           // Second row – pregnant & toddler
           Row(children: [
-            Expanded(child: buildStageButton(_stages[1].value, _stages[1].text, _stages[1].color, null)),
+            Expanded(child: buildStageButton(stages[1].value, stages[1].text, stages[1].color, null)),
             SizedBox(width: buttonSpacing),
-            Expanded(child: buildStageButton(_stages[2].value, _stages[2].text, _stages[2].color, null)),
+            Expanded(child: buildStageButton(stages[2].value, stages[2].text, stages[2].color, null)),
           ]),
           SizedBox(height: buttonSpacing),
           // Third row – teen & adult
           Row(children: [
-            Expanded(child: buildStageButton(_stages[3].value, _stages[3].text, _stages[3].color, null)),
+            Expanded(child: buildStageButton(stages[3].value, stages[3].text, stages[3].color, null)),
             SizedBox(width: buttonSpacing),
-            Expanded(child: buildStageButton(_stages[4].value, _stages[4].text, _stages[4].color, null)),
+            Expanded(child: buildStageButton(stages[4].value, stages[4].text, stages[4].color, null)),
           ]),
         ],
       ),

@@ -7,6 +7,52 @@ import '../config/app_config.dart';
 /// Simplified matching system optimized for current needs with future extensibility
 class SimpleMatching {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static const Duration _firestoreTimeout = Duration(seconds: 10);
+
+  // === Private Helper Methods ===
+  static void _debugLog(String method, String message) {
+    print("DEBUG: SimpleMatching.$method: $message");
+  }
+
+  static Future<T?> _safeFirestoreOperation<T>({
+    required Future<T> Function() operation,
+    required String methodName,
+    String? customMessage,
+  }) async {
+    try {
+      return await operation().timeout(
+        _firestoreTimeout,
+        onTimeout: () {
+          _debugLog(methodName, "Operation timed out: ${customMessage ?? 'No details'}");
+          throw TimeoutException('Operation timed out', _firestoreTimeout);
+        },
+      );
+    } catch (e, stackTrace) {
+      _debugLog(methodName, "Error: $e\nStack trace: $stackTrace");
+      return null;
+    }
+  }
+
+  static Future<void> _updateUserStatus(String userId, {
+    required bool isWaiting,
+    required bool isInConversation,
+    required String status,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    final updateData = {
+      'isWaiting': isWaiting,
+      'isInConversation': isInConversation,
+      'status': status,
+      'lastActiveTimestamp': FieldValue.serverTimestamp(),
+      if (additionalData != null) ...additionalData,
+    };
+
+    await _safeFirestoreOperation(
+      operation: () => _firestore.collection('users').doc(userId).update(updateData),
+      methodName: '_updateUserStatus',
+      customMessage: 'Updating status for user $userId to $status',
+    );
+  }
 
   /// Main matching method - finds a compatible user
   static Future<Map<String, dynamic>?> findMatch({
@@ -22,6 +68,11 @@ class SimpleMatching {
       
       print("SimpleMatching: Finding match for user $currentUserId with stages: $momStages");
       
+      // Fetch current user's language preference
+      final currentUserDoc = await _firestore.collection('users').doc(currentUserId).get();
+      String currentLanguage = (currentUserDoc.data()?['language'] as String?) ?? 'en';
+      print("SimpleMatching: Current user language: $currentLanguage");
+      
       print("DEBUG: About to call _getExcludedUsers");
       // Get previously matched users to exclude
       final excludedUsers = await _getExcludedUsers(currentUserId);
@@ -32,6 +83,7 @@ class SimpleMatching {
       final matchedUser = await _findCompatibleUser(
         currentUserId: currentUserId,
         momStages: momStages,
+        languageCode: currentLanguage,
         excludedUsers: excludedUsers,
       );
       print("DEBUG: _findCompatibleUser completed, result: $matchedUser");
@@ -97,6 +149,7 @@ class SimpleMatching {
   static Future<Map<String, dynamic>?> _findCompatibleUser({
     required String currentUserId,
     required List<String> momStages,
+    required String languageCode,
     required Set<String> excludedUsers,
   }) async {
     
@@ -138,9 +191,16 @@ class SimpleMatching {
         continue; // Skip users with no timestamp
       }
       
+      // Language match check
+      final userLanguage = data['language'] as String? ?? 'en';
+      if (userLanguage != languageCode) {
+        print("SimpleMatching: User $userId language $userLanguage does not match $languageCode");
+        continue;
+      }
+      
       // Add to eligible users list
       activeEligibleUsers.add({'id': userId, ...data});
-      print("SimpleMatching: Added eligible user: $userId");
+      print("SimpleMatching: Added eligible user: $userId (language match)");
     }
     
     print("SimpleMatching: Found ${activeEligibleUsers.length} active eligible users");
@@ -173,13 +233,21 @@ class SimpleMatching {
     required List<String> currentUserQuestions,
     required List<String> matchedUserQuestions,
   }) async {
-    
     // Get usernames
-    final currentUserDoc = await _firestore.collection('users').doc(currentUserId).get();
-    final matchedUserDoc = await _firestore.collection('users').doc(matchedUserId).get();
+    final currentUserDoc = await _safeFirestoreOperation(
+      operation: () => _firestore.collection('users').doc(currentUserId).get(),
+      methodName: '_createMatch',
+      customMessage: 'Fetching current user data',
+    );
     
-    final currentUserName = currentUserDoc.data()?['username'] ?? 'Unknown';
-    final matchedUserName = matchedUserDoc.data()?['username'] ?? 'Unknown';
+    final matchedUserDoc = await _safeFirestoreOperation(
+      operation: () => _firestore.collection('users').doc(matchedUserId).get(),
+      methodName: '_createMatch',
+      customMessage: 'Fetching matched user data',
+    );
+    
+    final currentUserName = currentUserDoc?.data()?['username'] ?? 'Unknown';
+    final matchedUserName = matchedUserDoc?.data()?['username'] ?? 'Unknown';
     
     // Create match record with hard-coded conversation duration
     final matchRef = _firestore.collection('matches').doc();
@@ -202,17 +270,11 @@ class SimpleMatching {
       'status': 'active',
     };
     
-    await matchRef.set(matchData);
-    
-    // Update user statuses to 'in_conversation' (replacing AdminService.updateUserStatus)
-    await _firestore.collection('users').doc(currentUserId).update({
-      'status': 'in_conversation',
-      'lastActiveTimestamp': FieldValue.serverTimestamp(),
-    });
-    await _firestore.collection('users').doc(matchedUserId).update({
-      'status': 'in_conversation',
-      'lastActiveTimestamp': FieldValue.serverTimestamp(),
-    });
+    await _safeFirestoreOperation(
+      operation: () => matchRef.set(matchData),
+      methodName: '_createMatch',
+      customMessage: 'Creating match record',
+    );
     
     // Prepare user-specific match data
     final currentUserMatchData = {
@@ -252,28 +314,24 @@ class SimpleMatching {
     };
     
     // Update both users' status with new match data
-    final batch = _firestore.batch();
+    await _updateUserStatus(
+      currentUserId,
+      isWaiting: false,
+      isInConversation: true,
+      status: 'in_conversation',
+      additionalData: {'matchData': currentUserMatchData},
+    );
     
-    batch.update(_firestore.collection('users').doc(currentUserId), {
-      'matchData': currentUserMatchData,
-      'isWaiting': false,
-      'isInConversation': true,
-      'status': 'in_conversation',
-      'lastActiveTimestamp': FieldValue.serverTimestamp(),
-    });
+    await _updateUserStatus(
+      matchedUserId,
+      isWaiting: false,
+      isInConversation: true,
+      status: 'in_conversation',
+      additionalData: {'matchData': matchedUserMatchData},
+    );
     
-    batch.update(_firestore.collection('users').doc(matchedUserId), {
-      'matchData': matchedUserMatchData,
-      'isWaiting': false,
-      'isInConversation': true,
-      'status': 'in_conversation',
-      'lastActiveTimestamp': FieldValue.serverTimestamp(),
-    });
-    
-    await batch.commit();
-    
-    print("SimpleMatching: Created match ${matchRef.id} between $currentUserName and $matchedUserName");
-    print("SimpleMatching: Conversation duration set to $conversationDuration seconds (expires at $expiresAt)");
+    _debugLog('_createMatch', "Created match ${matchRef.id} between $currentUserName and $matchedUserName");
+    _debugLog('_createMatch', "Conversation duration set to $conversationDuration seconds (expires at $expiresAt)");
     
     return currentUserMatchData;
   }
@@ -334,24 +392,28 @@ class SimpleMatching {
 
   /// Reset user status for new matching
   static Future<void> resetUserForMatching(String userId) async {
-    await _firestore.collection('users').doc(userId).update({
-      'status': 'waiting',
-      'lastActiveTimestamp': FieldValue.serverTimestamp(),
-      'isWaiting': true,
-      'isInConversation': false,
-      'matchData': FieldValue.delete(),
-    });
+    await _updateUserStatus(
+      userId,
+      isWaiting: true,
+      isInConversation: false,
+      status: 'waiting',
+      additionalData: {
+        'matchData': FieldValue.delete(),
+      },
+    );
   }
 
   /// Clean up user status
   static Future<void> cleanupUserStatus(String userId) async {
-    await _firestore.collection('users').doc(userId).update({
-      'status': 'offline',
-      'lastActiveTimestamp': FieldValue.serverTimestamp(),
-      'isWaiting': false,
-      'isInConversation': false,
-      'matchData': FieldValue.delete(),
-    });
+    await _updateUserStatus(
+      userId,
+      isWaiting: false,
+      isInConversation: false,
+      status: 'offline',
+      additionalData: {
+        'matchData': FieldValue.delete(),
+      },
+    );
   }
 
   /// Start conversation timer with hard-coded duration
