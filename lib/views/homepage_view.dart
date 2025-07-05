@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import 'login_view.dart';
+import '../config/app_config.dart';
 
 // Circle configuration class for decorative elements
 class CircleConfig {
@@ -171,10 +172,10 @@ class _HomepageViewState extends State<HomepageView> {
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: const Text(
-                      "We're here to help you connect with \nother mothers at your stage.",
+                    child: Text(
+                                              HomepageTexts.mainDescription,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: "Nuosu SIL",
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -218,9 +219,9 @@ class _HomepageViewState extends State<HomepageView> {
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
-                              : const Text(
-                                  "Get Started",
-                                  style: TextStyle(
+                              : Text(
+                                                                     HomepageTexts.getStarted,
+                                  style: const TextStyle(
                                     fontFamily: "Nuosu SIL",
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,

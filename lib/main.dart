@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 import 'Database_logic/firebase_options.dart';
-import 'views/loading_view.dart';
-import 'views/homepage_view.dart';
-import 'views/login_view.dart';
-import 'views/stage_selection_view.dart';
-import 'views/challenges_view.dart';
-import 'views/dashboard_view.dart';
-import 'viewmodels/loading_viewmodel.dart';
+import 'Database_logic/simple_auth_manager.dart';
 import 'viewmodels/auth_viewmodel.dart';
+import 'viewmodels/loading_viewmodel.dart';
+import 'viewmodels/welcome_viewmodel.dart';
 import 'viewmodels/stage_viewmodel.dart';
 import 'viewmodels/challenges_viewmodel.dart';
 import 'viewmodels/dashboard_viewmodel.dart';
 import 'viewmodels/messages_viewmodel.dart';
-import 'Database_logic/simple_auth_manager.dart';
+import 'views/homepage_view.dart';
+import 'views/dashboard_view.dart';
+import 'views/loading_view.dart';
+import 'views/login_view.dart';
+import 'views/stage_selection_view.dart';
+import 'views/challenges_view.dart';
+import 'config/app_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -179,7 +182,7 @@ class _AppInitializerState extends State<AppInitializer> {
               ),
               SizedBox(height: 20),
               Text(
-                "Initializing app...",
+                UITexts.initializingApp,
                 style: TextStyle(
                   fontFamily: "Nuosu SIL",
                   fontSize: 14,

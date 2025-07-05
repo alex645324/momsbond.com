@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/stage_viewmodel.dart';
 import '../models/stage_model.dart';
+import '../config/app_config.dart';
 
 // Circle configuration class for decorative elements
 class CircleConfig {
@@ -362,12 +363,12 @@ class ResponsiveStageSelection extends StatelessWidget {
   double get buttonSpacing     => _deviceValue(screenHeight * 0.04, screenHeight * 0.03, screenHeight * 0.02);
 
   // REFACTORED: Central stage definition list
-  static const List<_StageDef> _stageDefs = [
-    _StageDef('trying',   'trying moms?',  Color(0xFFEED5B9)),
-    _StageDef('pregnant', 'pregnant?',     Color(0xFFEFD4E2)),
-    _StageDef('toddler',  'toddler mom?',  Color(0xFFEDE4C6)),
-    _StageDef('teen',     'teen mom?',     Color(0xFFD8DAC5)),
-    _StageDef('adult',    'adult mom?',    Color(0xFFBBCAE4)),
+  static final List<_StageDef> _stages = [
+    _StageDef(MomStageTexts.trying,   MomStageTexts.tryingLabel,  Color(0xFFEED5B9)),
+    _StageDef(MomStageTexts.pregnant, MomStageTexts.pregnantLabel,     Color(0xFFEFD4E2)),
+    _StageDef(MomStageTexts.toddler,  MomStageTexts.toddlerLabel,  Color(0xFFEDE4C6)),
+    _StageDef(MomStageTexts.teen,     MomStageTexts.teenLabel,     Color(0xFFD8DAC5)),
+    _StageDef(MomStageTexts.adult,    MomStageTexts.adultLabel,    Color(0xFFBBCAE4)),
   ];
 
   // Helper to wrap a button in centered row (used by both layouts)
@@ -393,31 +394,23 @@ class ResponsiveStageSelection extends StatelessWidget {
             children: [
               // Main title
               Text(
-                'what stage are you in?',
-                style: TextStyle(
+                MomStageTexts.selectionTitle,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF494949),
                   fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w500,
-                  fontSize: titleFontSize,
-                  color: const Color(0xFF494949),
-                  height: 1.5,
                 ),
-                textAlign: TextAlign.center,
               ),
-
-              // Spacing between title and subtitle
-              SizedBox(height: screenHeight * 0.02),
-
-              // Subtitle
+              const SizedBox(height: 16),
               Text(
-                'this helps us match you with the best fit :)',
-                style: TextStyle(
-                  fontFamily: 'Satoshi',
+                MomStageTexts.selectionSubtitle,
+                style: const TextStyle(
+                  fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  fontSize: subtitleFontSize,
-                  color: const Color(0xFF777673),
-                  height: 1.35,
+                  color: Color(0xFF878787),
+                  fontFamily: 'Satoshi',
                 ),
-                textAlign: TextAlign.center,
               ),
 
               // Spacing before buttons - adjusted for desktop
@@ -465,10 +458,10 @@ class ResponsiveStageSelection extends StatelessWidget {
   Widget buildMobileButtons() {
     // REFACTORED: Build column from _stageDefs list dynamically
     final children = <Widget>[];
-    for (var i = 0; i < _stageDefs.length; i++) {
-      final d = _stageDefs[i];
+    for (var i = 0; i < _stages.length; i++) {
+      final d = _stages[i];
       children.add(_centeredButton(buildStageButton(d.value, d.text, d.color, null)));
-      if (i != _stageDefs.length - 1) children.add(SizedBox(height: buttonSpacing));
+      if (i != _stages.length - 1) children.add(SizedBox(height: buttonSpacing));
     }
     return Column(children: children);
   }
@@ -480,20 +473,20 @@ class ResponsiveStageSelection extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // First row – single centred button (trying moms)
-          _centeredButton(buildStageButton(_stageDefs[0].value, _stageDefs[0].text, _stageDefs[0].color, null), flex: 2),
+          _centeredButton(buildStageButton(_stages[0].value, _stages[0].text, _stages[0].color, null), flex: 2),
           SizedBox(height: buttonSpacing),
           // Second row – pregnant & toddler
           Row(children: [
-            Expanded(child: buildStageButton(_stageDefs[1].value, _stageDefs[1].text, _stageDefs[1].color, null)),
+            Expanded(child: buildStageButton(_stages[1].value, _stages[1].text, _stages[1].color, null)),
             SizedBox(width: buttonSpacing),
-            Expanded(child: buildStageButton(_stageDefs[2].value, _stageDefs[2].text, _stageDefs[2].color, null)),
+            Expanded(child: buildStageButton(_stages[2].value, _stages[2].text, _stages[2].color, null)),
           ]),
           SizedBox(height: buttonSpacing),
           // Third row – teen & adult
           Row(children: [
-            Expanded(child: buildStageButton(_stageDefs[3].value, _stageDefs[3].text, _stageDefs[3].color, null)),
+            Expanded(child: buildStageButton(_stages[3].value, _stages[3].text, _stages[3].color, null)),
             SizedBox(width: buttonSpacing),
-            Expanded(child: buildStageButton(_stageDefs[4].value, _stageDefs[4].text, _stageDefs[4].color, null)),
+            Expanded(child: buildStageButton(_stages[4].value, _stages[4].text, _stages[4].color, null)),
           ]),
         ],
       ),

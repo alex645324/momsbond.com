@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../Database_logic/simple_auth_manager.dart';
-import 'challenges_view.dart';
 import 'stage_selection_view.dart';
+import '../config/app_config.dart';
 
 // Circle configuration class for decorative elements
 class CircleConfig {
@@ -128,7 +128,7 @@ class _LoginViewState extends State<LoginView> {
   Future<void> _handleSubmit() async {
     if (_usernameController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
       setState(() {
-        _errorMessage = "Please fill in all fields";
+        _errorMessage = AuthTexts.fillAllFields;
       });
       return;
     }
@@ -164,17 +164,17 @@ class _LoginViewState extends State<LoginView> {
           _onAuthComplete(true, _usernameController.text.trim());
         } else {
           setState(() {
-            _errorMessage = result.message;
-            // Show additional help if username not found
             if (result.message.contains("Username not found")) {
-              _errorMessage = "${result.message}\n\nTip: Check your spelling or create a new account if you haven't already.";
+              _errorMessage = AuthTexts.usernameNotFoundError(result.message);
+            } else {
+              _errorMessage = result.message;
             }
           });
         }
       }
     } catch (e) {
       setState(() {
-        _errorMessage = "An error occurred. Please try again.";
+        _errorMessage = AuthTexts.genericError;
       });
     }
 
@@ -221,7 +221,7 @@ class _LoginViewState extends State<LoginView> {
       
       // Show helpful message when switching to sign-in
       if (!_isSignUp) {
-        _showInfoMessage("Enter your username and password to sign in");
+        _showInfoMessage(AuthTexts.signInPrompt);
       }
     });
   }
@@ -319,7 +319,7 @@ class _LoginViewState extends State<LoginView> {
       padding: const EdgeInsets.all(20),
       child: Center(
         child: Text(
-          _isSignUp ? "Create Account" : "Welcome Back",
+          _isSignUp ? AuthTexts.createAccount : AuthTexts.welcomeBack,
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -353,7 +353,7 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 child: Center(
                   child: Text(
-                    "Sign Up",
+                    AuthTexts.signUp,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -377,7 +377,7 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 child: Center(
                   child: Text(
-                    "Sign In",
+                    AuthTexts.signIn,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -423,7 +423,7 @@ class _LoginViewState extends State<LoginView> {
                 color: const Color(0xFF574F4E),
               ),
               decoration: InputDecoration(
-                hintText: "Username",
+                hintText: AuthTexts.usernameHint,
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 14,
                   color: const Color(0xFF999999),
@@ -467,7 +467,7 @@ class _LoginViewState extends State<LoginView> {
                 color: const Color(0xFF574F4E),
               ),
               decoration: InputDecoration(
-                hintText: "Password",
+                hintText: AuthTexts.passwordHint,
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 14,
                   color: const Color(0xFF999999),
@@ -532,7 +532,7 @@ class _LoginViewState extends State<LoginView> {
           ),
           const SizedBox(width: 10),
           Text(
-            "Keep me signed in",
+            AuthTexts.keepSignedIn,
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: const Color(0xFF574F4E),
@@ -607,7 +607,7 @@ class _LoginViewState extends State<LoginView> {
                     ),
                   )
                 : Text(
-                    _isSignUp ? "Create Account" : "Sign In",
+                    _isSignUp ? AuthTexts.createAccount : AuthTexts.signIn,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

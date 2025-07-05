@@ -6,6 +6,7 @@ import '../viewmodels/messages_viewmodel.dart';
 import '../Templates/chat_text_field.dart';
 import 'dashboard_view.dart';
 import 'package:flutter/animation.dart';
+import '../config/app_config.dart';
 
 // Holds width / scale data calculated from screen width
 class _LayoutSizes {
@@ -191,14 +192,14 @@ class _MessagesViewState extends State<MessagesView> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Chat Error',
+              ChatTexts.chatError,
               style: _txt(20, 1, FontWeight.w600, const Color(0xFF494949)),
             ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                viewModel.errorMessage ?? 'An error occurred',
+                viewModel.errorMessage ?? ChatTexts.errorOccurred,
                 textAlign: TextAlign.center,
                 style: _txt(14, 1, FontWeight.normal, const Color(0xFF494949)),
               ),
@@ -206,7 +207,7 @@ class _MessagesViewState extends State<MessagesView> {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => viewModel.clearError(),
-              child: const Text('Retry'),
+              child: Text(ChatTexts.retryButton),
             ),
           ],
         ),
@@ -248,7 +249,7 @@ class _MessagesViewState extends State<MessagesView> {
                             : (isTablet ? 24 : 20 * scaleFactor),
                         icon: const Icon(Icons.close),
                         color: const Color(0xFF494949),
-                        tooltip: 'Go to dashboard',
+                        tooltip: UITexts.goToDashboard,
                         onPressed: () {
                           final viewModel = Provider.of<MessagesViewModel>(context, listen: false);
                           viewModel.endConversationEarly();
@@ -319,7 +320,7 @@ class _MessagesViewState extends State<MessagesView> {
     if (viewModel.messages.isEmpty) {
       return Center(
         child: Text(
-          viewModel.messagesModel.starterText ?? 'Start your conversation...',
+          viewModel.messagesModel.starterText ?? ChatTexts.defaultStarterText,
           textAlign: TextAlign.center,
           style: _txt(16, scaleFactor, FontWeight.w400, const Color(0xFF878787)),
         ),
@@ -398,7 +399,7 @@ class _MessagesViewState extends State<MessagesView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Conversations Ended',
+                  ChatTexts.conversationEnded,
                   textAlign: TextAlign.center,
                   style: _txt(26, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                 ),
@@ -422,7 +423,7 @@ class _MessagesViewState extends State<MessagesView> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'did you feel connected to this person?',
+          ChatTexts.feedbackQuestion,
           style: _txt(14, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
         ),
         SizedBox(height: 32 * scaleFactor),
@@ -434,7 +435,7 @@ class _MessagesViewState extends State<MessagesView> {
               const CircularProgressIndicator(),
               SizedBox(height: 12 * scaleFactor),
               Text(
-                'Saving your feedback...',
+                ChatTexts.savingFeedback,
                 style: _txt(12, scaleFactor, FontWeight.normal, const Color(0xFF494949)),
               ),
             ],
@@ -471,7 +472,7 @@ class _MessagesViewState extends State<MessagesView> {
                       ),
                       child: Center(
                         child: Text(
-                          'yes',
+                          ChatTexts.feedbackYes,
                           style: _txt(14, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                         ),
                       ),
@@ -506,7 +507,7 @@ class _MessagesViewState extends State<MessagesView> {
                       ),
                       child: Center(
                         child: Text(
-                          'no',
+                          ChatTexts.feedbackNo,
                           style: _txt(14, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                         ),
                       ),
@@ -531,12 +532,12 @@ class _MessagesViewState extends State<MessagesView> {
         ),
         SizedBox(height: 16 * scaleFactor),
         Text(
-          'Thanks for your feedback!',
+          ChatTexts.thanksForFeedback,
           style: _txt(14, scaleFactor, FontWeight.w500, const Color(0xFF494949)),
         ),
         SizedBox(height: 8 * scaleFactor),
         Text(
-          'We hope you enjoyed connecting with another mom',
+          ChatTexts.enjoyedConnecting,
           textAlign: TextAlign.center,
           style: _txt(11, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
         ),
@@ -556,7 +557,7 @@ class _MessagesViewState extends State<MessagesView> {
             ),
             child: Center(
               child: Text(
-                'Continue',
+                ChatTexts.continueButton,
                 style: _txt(12, scaleFactor, FontWeight.w500, Colors.white),
               ),
             ),

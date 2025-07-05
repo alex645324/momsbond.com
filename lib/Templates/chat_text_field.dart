@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../config/app_config.dart';
 
 /// Isolated TextField widget that maintains focus independently of message state changes
 class ChatTextField extends StatefulWidget {
@@ -120,7 +121,7 @@ class _ChatTextFieldState extends State<ChatTextField> {
           minLines: 1,
           style: _txt(const Color(0xFF494949)),
           decoration: InputDecoration(
-            hintText: 'say how you feel...',
+            hintText: ChatTexts.inputHint,
             hintStyle: _txt(const Color(0xFF878787)),
             contentPadding: EdgeInsets.symmetric(
               horizontal: 24 * widget.scaleFactor,

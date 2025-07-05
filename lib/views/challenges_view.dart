@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/challenges_viewmodel.dart';
 import '../models/challenges_model.dart';
+import '../config/app_config.dart';
 
 // Circle configurations for decorative background - Mobile
 const mobileCircles = [
@@ -239,13 +240,13 @@ class ResponsiveChallengesLayout extends StatelessWidget {
                 // Main title
                 Text(
                   challengesViewModel.currentSet == 3 
-                      ? "what challenges are you\nfacing while trying?"
-                      : "what kinds of challenges\nhave you encountered?",
-                  style: TextStyle(
+                      ? ChallengeTexts.tryingTitle
+                      : ChallengeTexts.generalTitle,
+                  style: const TextStyle(
                     fontFamily: "Poppins",
                     fontWeight: FontWeight.w500,
-                    fontSize: titleFontSize,
-                    color: const Color(0xFF494949),
+                    fontSize: 28,
+                    color: Color(0xFF494949),
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,

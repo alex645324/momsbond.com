@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 
 class ChallengesModel {
   final int currentSet; // 1, 2, or 3 (3 = trying moms)
@@ -155,8 +156,8 @@ class ChallengesModel {
   static const List<ChallengeQuestion> _set1Available = [
     ChallengeQuestion(
       id: "body_changes",
-      text: "worries about body changes?",
-      dbValue: "Worry about weight and body changes?",
+      text: ChallengeTexts.bodyChanges,
+      dbValue: ChallengeTexts.bodyChangesDb,
       backgroundColor: Color(0xFFEFD4E2),
       width: 280,
       height: 70,
@@ -164,8 +165,8 @@ class ChallengesModel {
     ),
     ChallengeQuestion(
       id: "depression_anxiety",
-      text: "feeling postpartum depression or anxiety?",
-      dbValue: "Postpartum depression or anxiety?",
+      text: ChallengeTexts.depressionAnxiety,
+      dbValue: ChallengeTexts.depressionAnxietyDb,
       backgroundColor: Color(0xFFEDE4C6),
       width: 320,
       height: 80,
@@ -173,8 +174,8 @@ class ChallengesModel {
     ),
     ChallengeQuestion(
       id: "loneliness",
-      text: "loneliness because friends don't understand motherhood?",
-      dbValue: "Loneliness because friends don't understand motherhood?",
+      text: ChallengeTexts.loneliness,
+      dbValue: ChallengeTexts.lonelinessDb,
       backgroundColor: Color(0xFFD8DAC5),
       width: 340,
       height: 80,
@@ -185,8 +186,8 @@ class ChallengesModel {
   static const List<ChallengeQuestion> _set2Available = [
     ChallengeQuestion(
       id: "lost_identity",
-      text: "feeling lost outside of motherhood?",
-      dbValue: "Feeling lost outside of motherhood?",
+      text: ChallengeTexts.lostIdentity,
+      dbValue: ChallengeTexts.lostIdentityDb,
       backgroundColor: Color(0xFFEFD4E2),
       width: 280,
       height: 70,
@@ -194,8 +195,8 @@ class ChallengesModel {
     ),
     ChallengeQuestion(
       id: "judging_parenting",
-      text: "worried about others judging parenting style?",
-      dbValue: "Worried about others judging parenting style?",
+      text: ChallengeTexts.judgingParenting,
+      dbValue: ChallengeTexts.judgingParentingDb,
       backgroundColor: Color(0xFFEDE4C6),
       width: 320,
       height: 80,
@@ -203,8 +204,8 @@ class ChallengesModel {
     ),
     ChallengeQuestion(
       id: "fear_sick",
-      text: "fear of getting sick and not supporting family?",
-      dbValue: "Fear of getting sick and not supporting family?",
+      text: ChallengeTexts.fearSick,
+      dbValue: ChallengeTexts.fearSickDb,
       backgroundColor: Color(0xFFD8DAC5),
       width: 340,
       height: 80,
@@ -215,8 +216,8 @@ class ChallengesModel {
   static const List<ChallengeQuestion> _set3Available = [
     ChallengeQuestion(
       id: "fertility_stress",
-      text: "stress about fertility and timing?",
-      dbValue: "Stress about fertility and timing?",
+      text: ChallengeTexts.fertilityStress,
+      dbValue: ChallengeTexts.fertilityStressDb,
       backgroundColor: Color(0xFFEED5B9),
       width: 280,
       height: 70,
@@ -224,8 +225,8 @@ class ChallengesModel {
     ),
     ChallengeQuestion(
       id: "social_pressure",
-      text: "pressure from family and friends about having kids?",
-      dbValue: "Pressure from family and friends about having kids?",
+      text: ChallengeTexts.socialPressure,
+      dbValue: ChallengeTexts.socialPressureDb,
       backgroundColor: Color(0xFFEFD4E2),
       width: 320,
       height: 80,
@@ -233,8 +234,8 @@ class ChallengesModel {
     ),
     ChallengeQuestion(
       id: "financial_worries",
-      text: "worries about financial readiness for a baby?",
-      dbValue: "Worries about financial readiness for a baby?",
+      text: ChallengeTexts.financialWorries,
+      dbValue: ChallengeTexts.financialWorriesDb,
       backgroundColor: Color(0xFFEDE4C6),
       width: 300,
       height: 75,
@@ -242,8 +243,8 @@ class ChallengesModel {
     ),
     ChallengeQuestion(
       id: "relationship_changes",
-      text: "concerns about how a baby will change your relationship?",
-      dbValue: "Concerns about how a baby will change your relationship?",
+      text: ChallengeTexts.relationshipChanges,
+      dbValue: ChallengeTexts.relationshipChangesDb,
       backgroundColor: Color(0xFFD8DAC5),
       width: 340,
       height: 80,

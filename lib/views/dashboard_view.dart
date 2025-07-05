@@ -7,6 +7,7 @@ import '../models/messages_model.dart';
 import '../views/messages_view.dart';
 import '../views/loading_view.dart';
 import 'dart:math' as math;
+import '../config/app_config.dart';
 
 // TODO: FUTURE FEATURE - Create ProfileEditView for returning users
 // This new view would allow users to:
@@ -47,7 +48,7 @@ class _DashboardViewState extends State<DashboardView> {
           content: Text(message),
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
-            label: 'Dismiss',
+                          label: UITexts.dismiss,
             onPressed: () {
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
             },
@@ -167,7 +168,7 @@ class _DashboardViewState extends State<DashboardView> {
           
           // Welcome message with username
           Text(
-            'this is your homebase',
+                          DashboardTexts.homebaseTitle,
             style: GoogleFonts.poppins(
               fontSize: 20 * scaleFactor,
               fontWeight: FontWeight.w500,
@@ -178,7 +179,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           SizedBox(height: 8 * scaleFactor),
           Text(
-            'where you maintain and create new connections.',
+                          DashboardTexts.homebaseSubtitle,
             style: GoogleFonts.poppins(
               fontSize: 11 * scaleFactor,
               fontWeight: FontWeight.w400,
@@ -200,7 +201,7 @@ class _DashboardViewState extends State<DashboardView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'username: ${viewModel.username}',
+                          '${DashboardTexts.usernamePrefix}${viewModel.username}',
             style: GoogleFonts.poppins(
               fontSize: 10 * scaleFactor,
               fontWeight: FontWeight.w400,
@@ -209,7 +210,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           SizedBox(height: 4 * scaleFactor),
           Text(
-            'insta: realconnection.com_',
+                          DashboardTexts.instaHandle,
             style: GoogleFonts.poppins(
               fontSize: 10 * scaleFactor,
               fontWeight: FontWeight.w400,
@@ -349,7 +350,7 @@ class _DashboardViewState extends State<DashboardView> {
                               : Text(
                                   connection.otherUserName.isNotEmpty 
                                       ? connection.otherUserName[0].toUpperCase()
-                                      : 'U',
+                                      : DashboardTexts.defaultAvatarLetter,
                                   style: GoogleFonts.poppins(
                                     fontSize: 18 * scaleFactor,
                                     fontWeight: FontWeight.w600,
@@ -450,7 +451,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           SizedBox(height: 16 * scaleFactor),
           Text(
-            'No connections yet.',
+                          DashboardTexts.noConnections,
             style: GoogleFonts.poppins(
               fontSize: 18 * scaleFactor,
               color: const Color(0xFF494949),
@@ -460,7 +461,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           SizedBox(height: 8 * scaleFactor),
           Text(
-            'Start by making your first connection!',
+                          DashboardTexts.firstConnectionPrompt,
             style: GoogleFonts.poppins(
               fontSize: 14 * scaleFactor,
               color: const Color(0xFF777673),
@@ -526,7 +527,7 @@ class _DashboardViewState extends State<DashboardView> {
                         ),
                       )
                     : Text(
-                        'find new connection :)',
+                        DashboardTexts.findNewConnection,
                         style: TextStyle(
                           fontFamily: 'Satoshi',
                           fontSize: 16 * scaleFactor,
@@ -575,7 +576,7 @@ class InvitationDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       title: Text(
-        'Chat Invitation',
+        UITexts.chatInvitation,
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,
@@ -586,7 +587,7 @@ class InvitationDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '${invitation.senderName} wants to chat with you.',
+            '${invitation.senderName} ${UITexts.wantsToChat}',
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: const Color(0xFF494949),
@@ -595,7 +596,7 @@ class InvitationDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Would you like to start a conversation?',
+            UITexts.startConversationPrompt,
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: const Color(0xFF777673),
@@ -606,14 +607,8 @@ class InvitationDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
+          child: Text(UITexts.decline),
           onPressed: onDecline,
-          child: Text(
-            'Decline',
-            style: GoogleFonts.poppins(
-              color: const Color(0xFF777673),
-              fontWeight: FontWeight.w400,
-            ),
-          ),
         ),
         ElevatedButton(
           onPressed: onAccept,
@@ -624,7 +619,7 @@ class InvitationDialog extends StatelessWidget {
             ),
           ),
           child: Text(
-            'Accept',
+            UITexts.accept,
             style: GoogleFonts.poppins(
               color: const Color(0xFF494949),
               fontWeight: FontWeight.w500,
