@@ -155,14 +155,14 @@ class _HomepageViewState extends State<HomepageView> {
 
                 // Mother image
                 Positioned(
-                  top: 128,
+                  top: 180,  // Moved down from 128
                   left: 0,
                   right: 0,
                   child: Center(
                     child: Image.asset(
                       'lib/assets/mother.png',
-                      width: 300,
-                      height: 300,
+                      width: 340,  // Increased from 300
+                      height: 340,  // Increased from 300
                       fit: BoxFit.contain,
                     ),
                   ),
