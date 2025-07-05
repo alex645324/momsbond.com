@@ -63,7 +63,7 @@ class _ChatTextFieldState extends State<ChatTextField> {
   void _log(String msg) => debugPrint('[ChatTextField] $msg');
 
   TextStyle _txt(Color color) => GoogleFonts.poppins(
-        fontSize: 11 * widget.scaleFactor,
+        fontSize: 14 * widget.scaleFactor,
         color: color,
       );
 
@@ -90,7 +90,7 @@ class _ChatTextFieldState extends State<ChatTextField> {
           child: Icon(
             Icons.send,
             color: const Color(0xFF494949),
-            size: 20 * widget.scaleFactor,
+            size: 24 * widget.scaleFactor,
           ),
         ),
       );
@@ -102,7 +102,7 @@ class _ChatTextFieldState extends State<ChatTextField> {
       onPanUpdate: _maybeHandleSwipe,
       child: Container(
         constraints: BoxConstraints(
-          minHeight: 44 * widget.scaleFactor,
+          minHeight: 56 * widget.scaleFactor,
           maxHeight: 120 * widget.scaleFactor,
         ),
         decoration: _outerDecoration,
@@ -123,8 +123,8 @@ class _ChatTextFieldState extends State<ChatTextField> {
             hintText: 'say how you feel...',
             hintStyle: _txt(const Color(0xFF878787)),
             contentPadding: EdgeInsets.symmetric(
-              horizontal: 20 * widget.scaleFactor,
-              vertical: 14 * widget.scaleFactor,
+              horizontal: 24 * widget.scaleFactor,
+              vertical: 18 * widget.scaleFactor,
             ),
             border: InputBorder.none,
             isDense: true,

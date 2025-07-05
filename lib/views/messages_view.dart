@@ -5,6 +5,7 @@ import '../models/messages_model.dart';
 import '../viewmodels/messages_viewmodel.dart';
 import '../Templates/chat_text_field.dart';
 import 'dashboard_view.dart';
+import 'package:flutter/animation.dart';
 
 // Holds width / scale data calculated from screen width
 class _LayoutSizes {
@@ -29,6 +30,8 @@ class MessagesView extends StatefulWidget {
 class _MessagesViewState extends State<MessagesView> {
   final ScrollController _scrollController = ScrollController();
   late final Widget _chatTextField;
+  bool _isNearBottom = true;
+  int _previousMessageCount = 0;
 
   // -------------------------------------------------------------------
   // Small private helpers to remove repetition (public API unchanged)
@@ -56,6 +59,9 @@ class _MessagesViewState extends State<MessagesView> {
   void initState() {
     super.initState();
     
+    // Add scroll listener to track user scroll behavior
+    _scrollController.addListener(_onScroll);
+    
     // Create ChatTextField once and reuse it
     _chatTextField = LayoutBuilder(
       builder: (context, constraints) {
@@ -74,6 +80,22 @@ class _MessagesViewState extends State<MessagesView> {
     });
   }
 
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    
+    // Consider "near bottom" if within 100 pixels of bottom
+    final wasNearBottom = _isNearBottom;
+    _isNearBottom = (maxScroll - currentScroll) < 100;
+    
+    // Track if user is actively scrolling (not auto-scroll)
+    if (wasNearBottom != _isNearBottom) {
+      setState(() {});
+    }
+  }
+
   void _navigateToDashboard() {
     if (mounted) {
       // Reset the MessagesViewModel state before navigating
@@ -89,22 +111,32 @@ class _MessagesViewState extends State<MessagesView> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
   void _onSendMessage(String text) {
     Provider.of<MessagesViewModel>(context, listen: false).sendMessage(text);
+    // Always scroll to bottom when user sends a message
+    _isNearBottom = true; // Force scroll for sent messages
     _scrollToBottom();
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+    if (!_scrollController.hasClients) return;
+    
+    // Only auto-scroll if user is near bottom (like iMessage)
+    if (_isNearBottom) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     }
   }
 
@@ -113,6 +145,23 @@ class _MessagesViewState extends State<MessagesView> {
     return Consumer<MessagesViewModel>(
       child: _chatTextField,
       builder: (context, viewModel, chatTextField) {
+        // Check for new messages and auto-scroll if user is near bottom
+        if (viewModel.messages.length > _previousMessageCount && _isNearBottom) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToBottom();
+          });
+        }
+        
+        // Initial scroll to bottom when conversation first loads
+        if (_previousMessageCount == 0 && viewModel.messages.isNotEmpty) {
+          _isNearBottom = true; // Ensure we scroll for initial load
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToBottom();
+          });
+        }
+        
+        _previousMessageCount = viewModel.messages.length;
+
         if (viewModel.isLoading) {
           return _buildLoadingState();
         }
@@ -178,92 +227,86 @@ class _MessagesViewState extends State<MessagesView> {
             final sizes = _calcSizes(screenWidth);
             final bool isDesktop = screenWidth > 1024;
             final bool isTablet = screenWidth > 768 && screenWidth <= 1024;
-            final double contentWidth = sizes.contentWidth;
             final double scaleFactor = sizes.scaleFactor;
-            final double horizontalPadding =
-                sizes.isMobileWidth ? 0.0 : (screenWidth - contentWidth) / 2;
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
             
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              child: Container(
-                width: contentWidth,
-                height: screenHeight,
-                child: Stack(
-                  children: [
-                    // Exit (X) button – identical design to LoadingView
-                    Positioned(
-                      top: 10 * scaleFactor,
-                      right: 10 * scaleFactor,
-                      child: Opacity(
-                        opacity: 0.6,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          iconSize: isDesktop
-                              ? 28
-                              : (isTablet ? 24 : 20 * scaleFactor),
-                          icon: const Icon(Icons.close),
-                          color: const Color(0xFF494949),
-                          tooltip: 'Go to dashboard',
-                          onPressed: () {
-                            final viewModel = Provider.of<MessagesViewModel>(context, listen: false);
-                            viewModel.endConversationEarly();
-                          },
-                        ),
+            return Container(
+              width: screenWidth, // Use full screen width
+              height: screenHeight,
+              child: Stack(
+                children: [
+                  // Exit (X) button – identical design to LoadingView
+                  Positioned(
+                    top: 10 * scaleFactor,
+                    right: 10 * scaleFactor,
+                    child: Opacity(
+                      opacity: 0.6,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: isDesktop
+                            ? 28
+                            : (isTablet ? 24 : 20 * scaleFactor),
+                        icon: const Icon(Icons.close),
+                        color: const Color(0xFF494949),
+                        tooltip: 'Go to dashboard',
+                        onPressed: () {
+                          final viewModel = Provider.of<MessagesViewModel>(context, listen: false);
+                          viewModel.endConversationEarly();
+                        },
                       ),
                     ),
-                    // Chat messages area
-                    Positioned(
-                      left: 20,
-                      right: 20,
-                      top: 120 * scaleFactor,
-                      bottom: 140 * scaleFactor + bottomInset,
-                      child: _buildMessagesArea(viewModel, scaleFactor),
-                    ),
+                  ),
+                  // Chat messages area
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    top: 80 * scaleFactor,
+                    bottom: 80 * scaleFactor + bottomInset,
+                    child: _buildMessagesArea(viewModel, scaleFactor),
+                  ),
 
-                    // Timer display (top center)
-                    if (viewModel.isConversationActive)
-                      Positioned(
-                        top: 40 * scaleFactor,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: AnimatedOpacity(
-                            opacity: viewModel.messagesModel.remainingSeconds <= 10 ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 300),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16 * scaleFactor,
-                                vertical: 8 * scaleFactor,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE6E3E0),
-                                borderRadius: BorderRadius.circular(20 * scaleFactor),
-                              ),
-                              child: Text(
-                                viewModel.timerDisplay,
-                                style: _txt(14, scaleFactor, FontWeight.w500,
-                                    const Color(0xFF494949)),
-                              ),
+                  // Timer display (top center)
+                  if (viewModel.isConversationActive)
+                    Positioned(
+                      top: 40 * scaleFactor,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: AnimatedOpacity(
+                          opacity: viewModel.messagesModel.remainingSeconds <= 10 ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16 * scaleFactor,
+                              vertical: 8 * scaleFactor,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE6E3E0),
+                              borderRadius: BorderRadius.circular(20 * scaleFactor),
+                            ),
+                            child: Text(
+                              viewModel.timerDisplay,
+                              style: _txt(14, scaleFactor, FontWeight.w500,
+                                  const Color(0xFF494949)),
                             ),
                           ),
                         ),
                       ),
+                    ),
 
-                    // Input field at bottom
-                    if (viewModel.isConversationActive)
-                      Positioned(
-                        left: 20 * scaleFactor,
-                        right: 20 * scaleFactor,
-                        bottom: 20 * scaleFactor + bottomInset,
-                        child: chatTextField,
-                      ),
+                  // Input field at bottom
+                  if (viewModel.isConversationActive)
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 20 * scaleFactor + bottomInset,
+                      child: chatTextField,
+                    ),
 
-                    // End overlay
-                    if (viewModel.showEndOverlay)
-                      _buildEndOverlay(viewModel, scaleFactor),
-                  ],
-                ),
+                  // End overlay
+                  if (viewModel.showEndOverlay)
+                    _buildEndOverlay(viewModel, scaleFactor),
+                ],
               ),
             );
           },
@@ -285,9 +328,14 @@ class _MessagesViewState extends State<MessagesView> {
 
     return ListView.builder(
       controller: _scrollController,
-      reverse: true, // Show newest messages at bottom
+      // Natural order - no reverse, messages flow chronologically from top to bottom
       itemCount: viewModel.messages.length,
+      padding: EdgeInsets.only(
+        top: 8 * scaleFactor,
+        bottom: 8 * scaleFactor,
+      ),
       itemBuilder: (context, index) {
+        // Natural indexing - messages are already in chronological order
         final message = viewModel.messages[index];
         return _buildMessageBubble(message, scaleFactor);
       },
@@ -304,12 +352,12 @@ class _MessagesViewState extends State<MessagesView> {
             ? MainAxisAlignment.end 
             : MainAxisAlignment.start,
         children: [
-          if (!isCurrentUser) SizedBox(width: 45 * scaleFactor),
+          if (!isCurrentUser) SizedBox(width: 0),
           Flexible(
             child: Container(
               padding: EdgeInsets.symmetric(
-                horizontal: 16 * scaleFactor,
-                vertical: 12 * scaleFactor,
+                horizontal: 20 * scaleFactor,
+                vertical: 16 * scaleFactor,
               ),
               decoration: BoxDecoration(
                 color: isCurrentUser 
@@ -328,13 +376,13 @@ class _MessagesViewState extends State<MessagesView> {
               ),
               child: Text(
                 message.text,
-                style: _txt(11, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
+                style: _txt(14, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
                 softWrap: true,
                 overflow: TextOverflow.visible,
               ),
             ),
           ),
-          if (isCurrentUser) SizedBox(width: 45 * scaleFactor),
+          if (isCurrentUser) SizedBox(width: 0),
         ],
       ),
     );
@@ -342,24 +390,27 @@ class _MessagesViewState extends State<MessagesView> {
 
   Widget _buildEndOverlay(MessagesViewModel viewModel, double scaleFactor) {
     return Positioned.fill(
-      child: Container(
-        color: const Color(0xFFC8C5C5).withValues(alpha: 0.9),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Conversations Ended',
-                style: _txt(20, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
-              ),
-              SizedBox(height: 16 * scaleFactor),
-              
-              // Show different content based on conversation end step
-              if (viewModel.messagesModel.showAcknowledgment)
-                _buildAcknowledmentContent(viewModel, scaleFactor)
-              else if (viewModel.messagesModel.showFeedbackPrompt || viewModel.messagesModel.showFeedbackButtons)
-                _buildFeedbackContent(viewModel, scaleFactor),
-            ],
+      child: _FadeInWrapper(
+        child: Container(
+          color: const Color(0xFFC8C5C5).withOpacity(0.9),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Conversations Ended',
+                  textAlign: TextAlign.center,
+                  style: _txt(26, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
+                ),
+                SizedBox(height: 24 * scaleFactor),
+                
+                // Show different content based on conversation end step
+                if (viewModel.messagesModel.showAcknowledgment)
+                  _buildAcknowledmentContent(viewModel, scaleFactor)
+                else if (viewModel.messagesModel.showFeedbackPrompt || viewModel.messagesModel.showFeedbackButtons)
+                  _buildFeedbackContent(viewModel, scaleFactor),
+              ],
+            ),
           ),
         ),
       ),
@@ -372,29 +423,29 @@ class _MessagesViewState extends State<MessagesView> {
       children: [
         Text(
           'did you feel connected to this person?',
-          style: _txt(11, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
+          style: _txt(14, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
         ),
-        SizedBox(height: 24 * scaleFactor),
+        SizedBox(height: 32 * scaleFactor),
         
         // Binary choice button or loading indicator
         if (viewModel.messagesModel.isSubmittingFeedback)
           Column(
             children: [
               const CircularProgressIndicator(),
-              SizedBox(height: 8 * scaleFactor),
+              SizedBox(height: 12 * scaleFactor),
               Text(
                 'Saving your feedback...',
-                style: _txt(10, scaleFactor, FontWeight.normal, const Color(0xFF494949)),
+                style: _txt(12, scaleFactor, FontWeight.normal, const Color(0xFF494949)),
               ),
             ],
           )
         else
           Container(
-            width: 200 * scaleFactor,
-            height: 44 * scaleFactor,
+            width: 240 * scaleFactor,
+            height: 56 * scaleFactor,
             decoration: BoxDecoration(
               color: const Color(0xFFD9D9D9),
-              borderRadius: BorderRadius.circular(22 * scaleFactor),
+              borderRadius: BorderRadius.circular(28 * scaleFactor),
             ),
             child: Row(
               children: [
@@ -414,14 +465,14 @@ class _MessagesViewState extends State<MessagesView> {
                             ? const Color(0xFF494949).withValues(alpha: 0.2)
                             : Colors.transparent,
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(22 * scaleFactor),
-                          bottomLeft: Radius.circular(22 * scaleFactor),
+                          topLeft: Radius.circular(28 * scaleFactor),
+                          bottomLeft: Radius.circular(28 * scaleFactor),
                         ),
                       ),
                       child: Center(
                         child: Text(
                           'yes',
-                          style: _txt(11, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
+                          style: _txt(14, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                         ),
                       ),
                     ),
@@ -430,7 +481,7 @@ class _MessagesViewState extends State<MessagesView> {
                 // Vertical divider
                 Container(
                   width: 1,
-                  height: 24 * scaleFactor,
+                  height: 32 * scaleFactor,
                   color: const Color(0xFF494949),
                 ),
                 // No option
@@ -449,14 +500,14 @@ class _MessagesViewState extends State<MessagesView> {
                             ? const Color(0xFF494949).withValues(alpha: 0.2)
                             : Colors.transparent,
                         borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(22 * scaleFactor),
-                          bottomRight: Radius.circular(22 * scaleFactor),
+                          topRight: Radius.circular(28 * scaleFactor),
+                          bottomRight: Radius.circular(28 * scaleFactor),
                         ),
                       ),
                       child: Center(
                         child: Text(
                           'no',
-                          style: _txt(11, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
+                          style: _txt(14, scaleFactor, FontWeight.w600, const Color(0xFF494949)),
                         ),
                       ),
                     ),
@@ -513,5 +564,36 @@ class _MessagesViewState extends State<MessagesView> {
         ),
       ],
     );
+  }
+}
+
+// Small helper widget to fade-in its child once when inserted
+class _FadeInWrapper extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  const _FadeInWrapper({Key? key, required this.child, this.duration = const Duration(milliseconds: 400)}) : super(key: key);
+
+  @override
+  _FadeInWrapperState createState() => _FadeInWrapperState();
+}
+
+class _FadeInWrapperState extends State<_FadeInWrapper> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration)..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(opacity: _controller, child: widget.child);
   }
 } 

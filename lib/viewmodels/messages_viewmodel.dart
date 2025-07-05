@@ -233,8 +233,8 @@ class MessagesViewModel extends ChangeNotifier {
         .collection('conversations')
         .doc(_messagesModel.conversationId)
         .collection('messages')
-        .orderBy('createdAt', descending: true)
-        .limit(50) // Limit to recent messages
+        .orderBy('createdAt', descending: false)
+        .limit(50)
         .snapshots()
         .listen(
           (snapshot) {
