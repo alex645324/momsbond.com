@@ -6,78 +6,80 @@ import '../config/app_config.dart';
 import '../viewmodels/language_viewmodel.dart';
 import '../config/locale_helper.dart';
 
-// Circle configuration class for decorative elements
-class CircleConfig {
-  final double? left;
-  final double? right;
-  final double? top;
-  final double? bottom;
-  final double size;
-  final Color color;
-  final double opacity;
+// Configuration for positioned images in the photo mosaic
+class ImageConfig {
+  final String assetPath;
+  final double left;
+  final double top;
+  final double width;
+  final double height;
 
-  const CircleConfig({
-    this.left,
-    this.right,
-    this.top,
-    this.bottom,
-    required this.size,
-    required this.color,
-    this.opacity = 0.3,
+  const ImageConfig({
+    required this.assetPath,
+    required this.left,
+    required this.top,
+    required this.width,
+    required this.height,
   });
 }
 
-// Circle configurations for decorative background
-const decorativeCircles = [
-  CircleConfig(
-    left: 30,
-    top: 60,
-    size: 100,
-    color: Color(0xFFEFD4E2), // Pink
-    opacity: 0.25,
+// Values taken from the Figma art-board (frame 11:2)
+const List<ImageConfig> mosaicImages = [
+  ImageConfig(
+    assetPath: 'lib/assets/image6.png',
+    left: 220,
+    top: 179,
+    width: 140.17,
+    height: 177,
   ),
-  CircleConfig(
-    right: 40,
-    top: 150,
-    size: 80,
-    color: Color(0xFFEDE4C6), // Yellow
-    opacity: 0.2,
+  ImageConfig(
+    assetPath: 'lib/assets/image8.png',
+    left: 233,
+    top: 10,
+    width: 150,
+    height: 158,
   ),
-  CircleConfig(
-    left: 50,
-    top: 280,
-    size: 60,
-    color: Color(0xFFD8DAC5), // Green
-    opacity: 0.25,
+  ImageConfig(
+    assetPath: 'lib/assets/image7.png',
+    left: 8,
+    top: 10,
+    width: 217.87,
+    height: 172,
   ),
-  CircleConfig(
-    right: 20,
-    bottom: 200,
-    size: 90,
-    color: Color(0xFFEFD4E2), // Pink
-    opacity: 0.2,
+  ImageConfig(
+    assetPath: 'lib/assets/image5.png',
+    left: 200,
+    top: 551,
+    width: 183.17,
+    height: 283,
   ),
-  CircleConfig(
-    left: 40,
-    bottom: 150,
-    size: 70,
-    color: Color(0xFFEDE4C6), // Yellow
-    opacity: 0.25,
+  ImageConfig(
+    assetPath: 'lib/assets/image4.png',
+    left: 8,
+    top: 564,
+    width: 163,
+    height: 233,
   ),
-  // Additional circles for better framing
-  CircleConfig(
-    right: 60,
-    bottom: 300,
-    size: 50,
-    color: Color(0xFFD8DAC5), // Green
-    opacity: 0.2,
+  ImageConfig(
+    assetPath: 'lib/assets/image3.png',
+    left: 23,
+    top: 186,
+    width: 183.86,
+    height: 231,
   ),
-  CircleConfig(
-    left: 70,
-    bottom: 250,
-    size: 45,
-    color: Color(0xFFEFD4E2), // Pink
-    opacity: 0.15,
+  ImageConfig(
+    assetPath: 'lib/assets/image2.png',
+    left: 8,
+    top: 426,
+    width: 198.62,
+    height: 129,
+  ),
+  ImageConfig(
+    assetPath: 'lib/assets/image1.png',
+    left: 220,
+    top: 363,
+    width: 158.14,
+    height: 184,
   ),
 ];
 
@@ -133,76 +135,127 @@ class _HomepageViewState extends State<HomepageView> {
     return Consumer<AuthViewModel>(
       builder: (context, viewModel, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF2EDE7),
+          // Updated to match project's consistent background color
+          backgroundColor: const Color(0xFFEAE7E2),
           body: SafeArea(
             child: Stack(
               children: [
-                // Decorative circles
-                ...decorativeCircles.map((circle) => Positioned(
-                  left: circle.left,
-                  right: circle.right,
-                  top: circle.top,
-                  bottom: circle.bottom,
-                  child: Container(
-                    width: circle.size,
-                    height: circle.size,
-                    decoration: BoxDecoration(
-                      color: circle.color.withOpacity(circle.opacity),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                )),
+                // Calculate offsets to center the Figma-sized collage (393×878) in the
+                // current screen. Negative offsets collapse to zero to avoid spilling.
+                ...(() {
+                  const designWidth = 393.0;
+                  const designHeight = 878.0;
+                  final size = MediaQuery.of(context).size;
+                  final dx = ((size.width - designWidth) / 2).clamp(0.0, double.infinity);
+                  final dy = ((size.height - designHeight) / 2).clamp(0.0, double.infinity);
 
-                // Mother image
-                Positioned(
-                  top: 180,  // Moved down from 128
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Image.asset(
-                      'lib/assets/mother.png',
-                      width: 340,  // Increased from 300
-                      height: 340,  // Increased from 300
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
+                  // Build mosaic images
+                  final imageWidgets = mosaicImages.map((img) => Positioned(
+                        left: img.left + dx,
+                        top: img.top + dy,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.asset(
+                            img.assetPath,
+                            width: img.width,
+                            height: img.height,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ));
 
-                // Welcome text
-                Positioned(
-                  top: 438,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Text(
-                                              L.homepage(context).mainDescription,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: "Nuosu SIL",
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF574F4E),
+                  // Build description card with internal content
+                  final cardWidget = Positioned(
+                    left: 71 + dx,
+                    top: 519 + dy,
+                    child: Container(
+                      width: 260,
+                      height: 250,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF2EDE7),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 1,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color.fromRGBO(0, 0, 0, 0.25),
+                            offset: Offset(0, 4),
+                            blurRadius: 23.9,
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          // Main description text positioned exactly as in Figma
+                          Positioned(
+                            left: 23,
+                            top: 25, //32
+                            child: SizedBox(
+                              width: 214.83,
+                              height: 85.03,
+                              child: Text(
+                                L.homepage(context).mainDescription,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Language buttons positioned exactly as in Figma
+                          Positioned(
+                            left: 50,
+                            top: 103,
+                            child: SizedBox(
+                              width: 158.64,
+                              height: 102.93,
+                              child: Column(
+                                children: [
+                                  _buildLanguageButton(context, viewModel, 'en', AppTexts.language.english),
+                                  const SizedBox(height: 15.07), // Gap between buttons: 59 - 43.93 = 15.07
+                                  _buildLanguageButton(context, viewModel, 'es', AppTexts.language.spanish),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ),
+                  );
 
-                // Language Selection Buttons
-                Positioned(
-                  bottom: 60,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildLanguageButton(context, viewModel, 'en', AppTexts.language.english),
-                        const SizedBox(height: 12),
-                        _buildLanguageButton(context, viewModel, 'es', AppTexts.language.spanish),
-                      ],
+                  // Build Group 39 asset positioned as in Figma
+                  final group39Widget = Positioned(
+                    left: 67.28 + dx,
+                    top: 177.91 + dy,
+                    child: Image.asset(
+                      'lib/assets/Group 39.png',
+                      width: 272.55,
+                      height: 364.11,
+                      fit: BoxFit.cover,
                     ),
-                  ),
-                ),
+                  );
+
+                  // Build overlay with 33% opacity
+                  final overlayWidget = Positioned.fill(
+                    child: Container(
+                      color: const Color(0xFFEAE7E2).withOpacity(0.60),
+                    ),
+                  );
+
+                  return [
+                    ...imageWidgets,
+                    overlayWidget,
+                    cardWidget,
+                    group39Widget,
+                    // Note: language buttons now inside the card.
+                  ];
+                })(),
 
                 // Error message display
                 if (viewModel.errorMessage != null)
@@ -261,6 +314,8 @@ class _HomepageViewState extends State<HomepageView> {
   // Helper widget to create language buttons
   Widget _buildLanguageButton(BuildContext context, AuthViewModel authViewModel, String langCode, String label) {
     final isDisabled = authViewModel.isLoading || _isNavigating;
+    final heart = langCode == 'en' ? '❤️' : '💙';
+
     return GestureDetector(
       onTap: isDisabled
           ? null
@@ -269,18 +324,20 @@ class _HomepageViewState extends State<HomepageView> {
               _navigateToLogin();
             },
       child: Container(
-        width: 240,
-        height: 50,
+        width: 158.64,
+        height: 43.93,
         decoration: BoxDecoration(
-          color: isDisabled
-              ? const Color(0xFF574F4E).withOpacity(0.6)
-              : const Color(0xFF574F4E),
-          borderRadius: BorderRadius.circular(25),
+          color: isDisabled ? const Color(0xFFD9D9D9).withOpacity(0.6) : const Color(0xFFD9D9D9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.black,
+            width: 1,
+          ),
           boxShadow: const [
             BoxShadow(
               color: Color.fromRGBO(0, 0, 0, 0.25),
-              offset: Offset(0, 4),
-              blurRadius: 8,
+              offset: Offset(3, 4),
+              blurRadius: 4,
             ),
           ],
         ),
@@ -291,16 +348,17 @@ class _HomepageViewState extends State<HomepageView> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                   ),
                 )
               : Text(
-                  label,
+                  '$label $heart',
                   style: const TextStyle(
-                    fontFamily: "Nuosu SIL",
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w300,
+                    color: Colors.black,
+                    height: 1.5,
                   ),
                 ),
         ),

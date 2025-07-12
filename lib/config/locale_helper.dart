@@ -34,6 +34,8 @@ class _HomepageProxy with _BaseProxy {
   const _HomepageProxy(this.es);
 
   String get mainDescription => _pickStatic(() => HomepageTexts.mainDescription, () => HomepageTextsEs.mainDescription);
+
+  String get cardSubtitle => _pickStatic(() => HomepageTexts.cardSubtitle, () => HomepageTextsEs.cardSubtitle);
 }
 
 class _AuthProxy with _BaseProxy {

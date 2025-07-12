@@ -56,7 +56,7 @@ class MomStageTexts with _TextSelector {
   // Stage display text
   static const String tryingLabel = 'trying moms?';
   static const String pregnantLabel = 'pregnant?';
-  static const String toddlerLabel = 'toddler mom?';
+  static const String toddlerLabel = 'New mom 💕';
   static const String teenLabel = 'teen mom?';
   static const String adultLabel = 'adult mom?';
   
@@ -73,15 +73,15 @@ class ChallengeTexts with _TextSelector {
   static const String tryingTitle = 'what challenges are you\nfacing while trying?';
   static const String generalTitle = 'what kinds of challenges\nhave you encountered?';
   
-  // Set 1 Questions (General motherhood challenges)
-  static const String bodyChanges = 'worries about body changes?';
-  static const String bodyChangesDb = 'Worry about weight and body changes?';
+  // Set 1 Questions (New mothers)
+  static const String bodyChanges = 'Feeling like you’ve lost yourself?';
+  static const String bodyChangesDb = 'Feeling like you’ve lost yourself?';
   
-  static const String depressionAnxiety = 'feeling postpartum depression or anxiety?';
-  static const String depressionAnxietyDb = 'Postpartum depression or anxiety?';
+  static const String depressionAnxiety = 'Terrified of judgment?';
+  static const String depressionAnxietyDb = 'Terrified of judgment?';
   
-  static const String loneliness = 'loneliness because friends don\'t understand motherhood?';
-  static const String lonelinessDb = 'Loneliness because friends don\'t understand motherhood?';
+  static const String loneliness = 'Haunted by relentless anxiety?';
+  static const String lonelinessDb = 'Haunted by relentless anxiety?';
   
   // Set 2 Questions (Additional motherhood challenges)
   static const String lostIdentity = 'feeling lost outside of motherhood?';
@@ -204,7 +204,9 @@ class HomepageTexts with _TextSelector {
   const HomepageTexts();
   
   // Main description
-  static const String mainDescription = '';
+  static const String mainDescription = "We built a space that connects you with moms who've been in your place.";
+  // Tagline inside description card
+  static const String cardSubtitle = "We connect you with moms who feel exactly what you’re feeling.";
 }
 
 /// Language selection text
@@ -377,6 +379,6 @@ class UITextsEs with _TextSelector {
 class HomepageTextsEs with _TextSelector {
   const HomepageTextsEs();
 
-  static const String mainDescription = '';
-  static const String getStarted = 'Comenzar';
+  static const String mainDescription = "Creamos un espacio que te conecta con mamás que han estado en tu lugar.";
+  static const String cardSubtitle = 'Te conectamos con mamás que sienten exactamente lo que tú sientes.';
 } 

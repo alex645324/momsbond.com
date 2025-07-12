@@ -367,11 +367,11 @@ class ResponsiveStageSelection extends StatelessWidget {
   List<_StageDef> _buildStages(BuildContext context) {
     final t = L.momStages(context);
     return [
-      _StageDef(t.trying,   t.tryingLabel,   const Color(0xFFEED5B9)),
-      _StageDef(t.pregnant, t.pregnantLabel, const Color(0xFFEFD4E2)),
+      // _StageDef(t.trying,   t.tryingLabel,   const Color(0xFFEED5B9)),
+      // _StageDef(t.pregnant, t.pregnantLabel, const Color(0xFFEFD4E2)),
       _StageDef(t.toddler,  t.toddlerLabel,  const Color(0xFFEDE4C6)),
-      _StageDef(t.teen,     t.teenLabel,     const Color(0xFFD8DAC5)),
-      _StageDef(t.adult,    t.adultLabel,    const Color(0xFFBBCAE4)),
+      // _StageDef(t.teen,     t.teenLabel,     const Color(0xFFD8DAC5)),
+      // _StageDef(t.adult,    t.adultLabel,    const Color(0xFFBBCAE4)),
     ];
   }
 
@@ -424,12 +424,7 @@ class ResponsiveStageSelection extends StatelessWidget {
               SizedBox(height: isDesktop ? screenHeight * 0.10 : screenHeight * 0.05),
 
               // Stage buttons
-              if (isMobile)
-                // Mobile layout - stacked buttons
-                _buildMobileButtons(stages)
-              else
-                // Desktop/Tablet layout - 2x2 grid
-                _buildDesktopButtons(stages),
+              _buildMobileButtons(stages),
             ],
           ),
         ),
@@ -471,33 +466,6 @@ class ResponsiveStageSelection extends StatelessWidget {
       if (i != stages.length - 1) children.add(SizedBox(height: buttonSpacing));
     }
     return Column(children: children);
-  }
-
-  Widget _buildDesktopButtons(List<_StageDef> stages) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.15),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // First row – single centred button (trying moms)
-          _centeredButton(buildStageButton(stages[0].value, stages[0].text, stages[0].color, null), flex: 2),
-          SizedBox(height: buttonSpacing),
-          // Second row – pregnant & toddler
-          Row(children: [
-            Expanded(child: buildStageButton(stages[1].value, stages[1].text, stages[1].color, null)),
-            SizedBox(width: buttonSpacing),
-            Expanded(child: buildStageButton(stages[2].value, stages[2].text, stages[2].color, null)),
-          ]),
-          SizedBox(height: buttonSpacing),
-          // Third row – teen & adult
-          Row(children: [
-            Expanded(child: buildStageButton(stages[3].value, stages[3].text, stages[3].color, null)),
-            SizedBox(width: buttonSpacing),
-            Expanded(child: buildStageButton(stages[4].value, stages[4].text, stages[4].color, null)),
-          ]),
-        ],
-      ),
-    );
   }
 
   Widget buildStageButton(
