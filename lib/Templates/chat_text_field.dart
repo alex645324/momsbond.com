@@ -8,11 +8,13 @@ import '../config/locale_helper.dart';
 class ChatTextField extends StatefulWidget {
   final Function(String) onSendMessage;
   final double scaleFactor;
+  final ValueChanged<String>? onTextChanged;
 
   const ChatTextField({
     Key? key,
     required this.onSendMessage,
     required this.scaleFactor,
+    this.onTextChanged,
   }) : super(key: key);
 
   @override
@@ -117,6 +119,7 @@ class _ChatTextFieldState extends State<ChatTextField> {
             _sendMessage();
           },
           keyboardType: TextInputType.multiline,
+          onChanged: widget.onTextChanged,
           textInputAction: TextInputAction.newline,
           maxLines: null, // allow unlimited lines
           minLines: 1,

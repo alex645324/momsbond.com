@@ -31,6 +31,7 @@ class MessagesViewModel extends ChangeNotifier {
   bool get isConversationActive => _messagesModel.isConversationActive;
   bool get showEndOverlay => _messagesModel.showEndOverlay;
   String get timerDisplay => _messagesModel.timerDisplay;
+  List<String> get templateMessages => _messagesModel.templateMessages;
 
   void _updateState(MessagesModel newModel) {
     _messagesModel = newModel;
@@ -86,8 +87,11 @@ class MessagesViewModel extends ChangeNotifier {
     print("MessagesViewModel: Initializing conversation ${initData.conversationId} with real-time messaging");
     
     try {
-      // Generate starter text once during initialization
+      // Generate starter text and template messages once during initialization
       final starterText = _generateStarterText(initData.currentUser, initData.matchedUser);
+
+      // Generate a single conversation-starter template based on current user's challenges
+      final templates = _generateTemplateMessages(initData.currentUser.selectedQuestions);
       
       _setState(_messagesModel.copyWith(
         isLoading: true,
@@ -104,6 +108,7 @@ class MessagesViewModel extends ChangeNotifier {
         selectedFeedback: null,
         conversationEndStep: null,
         errorMessage: null,
+        templateMessages: templates,
       ), 'Conversation initialized state set');
 
       // Create conversation document in Firestore if it doesn't exist
@@ -141,52 +146,8 @@ class MessagesViewModel extends ChangeNotifier {
   }
 
   String _generateStarterText(CurrentUserData currentUser, MatchedUserData matchedUser) {
-    // Clean and prepare topics
-    final currentTopics = currentUser.selectedQuestions
-        .map((t) => t.trim())
-        .where((t) => t.isNotEmpty)
-        .toList();
-
-    final matchedTopics = matchedUser.selectedQuestions
-        .map((t) => t.trim())
-        .where((t) => t.isNotEmpty)
-        .toList();
-
-    print("DEBUG: Current user topics: $currentTopics");
-    print("DEBUG: Matched user topics: $matchedTopics");
-
-    // Initialize topic as null
-    String? topic;
-
-    // First try to find a shared challenge
-    if (currentTopics.isNotEmpty && matchedTopics.isNotEmpty) {
-      for (var t in currentTopics) {
-        if (matchedTopics.contains(t)) {
-          topic = t;
-          print("DEBUG: Found shared topic: $topic");
-          break;
-        }
-      }
-    }
-
-    // If no shared topic found, use current user's first selection
-    if (topic == null) {
-      // Try current user's topics first
-      if (currentTopics.isNotEmpty) {
-        topic = currentTopics.first;
-        print("DEBUG: Using current user's first topic: $topic");
-      }
-      // Fallback to matched user's topics if current user has none
-      else if (matchedTopics.isNotEmpty) {
-        topic = matchedTopics.first;
-        print("DEBUG: Using matched user's first topic: $topic");
-      }
-    }
-
-    // Generate and return the starter text
-    final text = 'your connection also struggles with \n"${topic ?? 'connecting with other moms'}"';
-    print("DEBUG: Generated starter text: $text");
-    return text;
+    // New simplified prompt instructing user to tap template message
+    return 'Tap the suggested starter message to start your conversation';
   }
 
   Future<void> _createConversationDocument(ConversationInitData initData) async {
@@ -564,5 +525,39 @@ class MessagesViewModel extends ChangeNotifier {
   void endConversationEarly() {
     print("MessagesViewModel: endConversationEarly invoked by local user");
     _onConversationEnd();
+  }
+
+  // --------------------------------------------------
+  // Template message helpers
+  // --------------------------------------------------
+
+  List<String> _generateTemplateMessages(List<String> challenges) {
+    if (challenges.isEmpty) return [];
+
+    // Take the first challenge for template generation
+    final challenge = challenges.first.trim();
+
+    if (challenge.isEmpty) return [];
+
+    // Remove trailing punctuation for smoother question
+    String cleaned = challenge.replaceAll(RegExp(r'[?.!]+'), '').toLowerCase();
+
+    final question = 'Are you also $cleaned?';
+    // Note: For Spanish we could branch here using locale if needed.
+
+    return [question];
+  }
+
+  /// Hides any visible template messages (called when user starts typing or selects one)
+  void hideTemplates() {
+    if (_messagesModel.templateMessages.isNotEmpty) {
+      _setState(_messagesModel.copyWith(templateMessages: []), 'Templates hidden');
+    }
+  }
+
+  /// Sends a template message and then hides templates
+  Future<void> sendTemplateMessage(String text) async {
+    await sendMessage(text);
+    hideTemplates();
   }
 } 

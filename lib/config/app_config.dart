@@ -56,7 +56,7 @@ class MomStageTexts with _TextSelector {
   // Stage display text
   static const String tryingLabel = 'trying moms?';
   static const String pregnantLabel = 'pregnant?';
-  static const String toddlerLabel = 'New mom 💕';
+  static const String toddlerLabel = 'new mom 🤍';
   static const String teenLabel = 'teen mom?';
   static const String adultLabel = 'adult mom?';
   

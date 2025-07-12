@@ -369,7 +369,7 @@ class ResponsiveStageSelection extends StatelessWidget {
     return [
       // _StageDef(t.trying,   t.tryingLabel,   const Color(0xFFEED5B9)),
       // _StageDef(t.pregnant, t.pregnantLabel, const Color(0xFFEFD4E2)),
-      _StageDef(t.toddler,  t.toddlerLabel,  const Color(0xFFEDE4C6)),
+      _StageDef(t.toddler,  t.toddlerLabel,  const Color(0xFFBBCAE4)),
       // _StageDef(t.teen,     t.teenLabel,     const Color(0xFFD8DAC5)),
       // _StageDef(t.adult,    t.adultLabel,    const Color(0xFFBBCAE4)),
     ];

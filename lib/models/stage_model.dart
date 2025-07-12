@@ -34,7 +34,7 @@ class StageModel {
   static const List<String> availableStages = [
     'trying moms?',
     'pregnant?',
-    'toddler mom?',
+    'new mom?',
     'teen mom?',
     'adult mom?',
   ];
@@ -43,7 +43,7 @@ class StageModel {
   static const Map<String, String> stageMapping = {
     'trying': 'trying moms?',
     'pregnant': 'pregnant?',
-    'toddler': 'toddler mom?',
+    'toddler': 'new mom?',
     'teen': 'teen mom?',
     'adult': 'adult mom?',
   };

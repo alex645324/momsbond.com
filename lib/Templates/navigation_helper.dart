@@ -71,7 +71,7 @@ class NavigationHelper {
 
   // REFACTORED: Centralized stage definitions to eliminate hardcoded values
   static const List<String> _tryingMomsStages = ["trying moms?"];
-  static const List<String> _youngChildStages = ["pregnant?", "toddler mom?"];
+  static const List<String> _youngChildStages = ["pregnant?", "new mom?"];
   static const List<String> _olderChildStages = ["teen mom?", "adult mom?"];
 
   // REFACTORED: Helper method to get all available stages (useful for validation)
