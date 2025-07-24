@@ -26,6 +26,9 @@ class DashboardView extends StatefulWidget {
 }
 
 class _DashboardViewState extends State<DashboardView> {
+  ConnectionData? _selectedConnection;
+  bool _showConnectionPopup = false;
+
   @override
   void initState() {
     super.initState();
@@ -91,6 +94,33 @@ class _DashboardViewState extends State<DashboardView> {
     }
   }
 
+  Offset? _connectionTapPosition; 
+
+  void _showConnectionDetailsPopup(ConnectionData connection, Offset tapPosition) {
+    setState(() {
+      _selectedConnection = connection; 
+      _connectionTapPosition = tapPosition; 
+      _showConnectionPopup = true; 
+    });
+  }
+
+  void _hideConnectionPopup() {
+    setState(() {
+      _showConnectionPopup = false;
+      _selectedConnection = null;
+      _connectionTapPosition = null;
+    });
+  }
+
+  void _handleSmallButtonTap() {
+    if (_selectedConnection != null) {
+      // Send invitation when small button is tapped
+      Provider.of<DashboardViewModel>(context, listen: false)
+          .sendInvitation(_selectedConnection!);
+      _hideConnectionPopup();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,6 +175,12 @@ class _DashboardViewState extends State<DashboardView> {
 
                         // Bottom button (fixed)
                         _buildBottomButton(scaleFactor, viewModel),
+                        
+                        // Background overlay to dismiss floating UI (must be below floating UI)
+                        if (_showConnectionPopup) _buildDismissOverlay(),
+                        
+                        // Floating connection interaction UI (must be on top)
+                        if (_showConnectionPopup) _buildFloatingTalkUI(),
                       ],
                     ),
                   ),
@@ -153,6 +189,101 @@ class _DashboardViewState extends State<DashboardView> {
             );
           },
         ),
+      ),
+    );
+  }
+  Widget _buildDismissOverlay() {
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: _hideConnectionPopup,
+        child: Container(
+          color: Colors.transparent, // Transparent overlay to catch taps
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingTalkUI() {
+    if (!_showConnectionPopup || _selectedConnection == null || _connectionTapPosition == null) {
+      return const SizedBox.shrink();
+    }
+
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final localOffset = renderBox.globalToLocal(_connectionTapPosition!);
+
+    return Positioned(
+      left: localOffset.dx + 20,
+      top: localOffset.dy - 80,
+      child: GestureDetector(
+        onTap: () {}, // Prevent taps from bubbling to dismiss overlay
+        child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEAE7E2), // Match dashboard background color
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.20),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            const SizedBox(height: 4),
+            // Talk again row with button
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'talk again:',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: const Color(0xFF494949),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _handleSmallButtonTap,
+                  child: Container(
+                    height: 20,
+                    width: 28, // Horizontally elongated
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAE7E2), // Light gray background
+                      borderRadius: BorderRadius.circular(10), // Rounded corners
+                      border: Border.all(
+                        color: const Color(0xFFC4C1BE), // Slightly darker border
+                        width: 0.5,
+                      ),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.chevron_right, // Right-pointing arrow
+                        size: 16,
+                        color: Color(0xFF494949), // Dark gray arrow
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 2),
+            // Connection streak text
+            Text(
+              'connection streak: 1 day',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: const Color(0xFF777673),
+              ),
+            ),
+          ],
+        ),
+      ),
       ),
     );
   }
@@ -179,16 +310,7 @@ class _DashboardViewState extends State<DashboardView> {
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 8 * scaleFactor),
-          Text(
-                          L.dashboard(context).homebaseSubtitle,
-            style: GoogleFonts.poppins(
-              fontSize: 11 * scaleFactor,
-              fontWeight: FontWeight.w400,
-              color: const Color(0xFF777673),
-              height: 1.35,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          _buildConnectionScoreText(scaleFactor, viewModel),
         ],
       ),
     );
@@ -197,19 +319,51 @@ class _DashboardViewState extends State<DashboardView> {
   Widget _buildUserInfoDisplay(double scaleFactor, DashboardViewModel viewModel) {
     return Positioned(
       top: 8 * scaleFactor,
-      left: 16 * scaleFactor,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${L.dashboard(context).usernamePrefix}${viewModel.username}',
-            style: GoogleFonts.poppins(
-              fontSize: 10 * scaleFactor,
-              fontWeight: FontWeight.w400,
-              color: const Color(0xFF494949),
+      right: 16 * scaleFactor,
+      child: PopupMenuButton<String>(
+        onSelected: (String value) {
+          // Handle dropdown selection if needed in the future
+          if (value == 'logout') {
+            // Future: handle logout
+          }
+        },
+        itemBuilder: (BuildContext context) => [
+          PopupMenuItem<String>(
+            enabled: false, // Make it non-clickable, just for display
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.person,
+                  size: 16 * scaleFactor,
+                  color: const Color(0xFF494949),
+                ),
+                SizedBox(width: 8 * scaleFactor),
+                Text(
+                  viewModel.username,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12 * scaleFactor,
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xFF494949),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+        icon: Icon(
+          Icons.settings,
+          size: 20 * scaleFactor,
+          color: const Color(0xFF777673),
+        ),
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        color: const Color(0xFFF2EDE7),
+        offset: Offset(0, 32 * scaleFactor),
+        padding: EdgeInsets.zero,
+        splashRadius: 20 * scaleFactor,
       ),
     );
   }
@@ -287,9 +441,7 @@ class _DashboardViewState extends State<DashboardView> {
       child: Opacity(
         opacity: connection.visualOpacity,
         child: GestureDetector(
-          onTap: connection.isActive 
-              ? () => viewModel.sendInvitation(connection)
-              : null,
+          onTapDown: (details) => _showConnectionDetailsPopup(connection, details.globalPosition),
           child: Column(
             children: [
               Stack(
@@ -540,6 +692,77 @@ class _DashboardViewState extends State<DashboardView> {
       return L.dashboard(context).tapToTalkAgain;
     }
     return text; // other statuses stay the same for now
+  }
+
+  Widget _buildConnectionScoreText(double scaleFactor, DashboardViewModel viewModel) {
+    final connectionCount = viewModel.activeConnections.length;
+    final fullText = L.dashboard(context).homebaseSubtitle(connectionCount);
+    
+    // Parse the text to find the number and style it differently
+    final numberString = connectionCount.toString();
+    final parts = fullText.split(numberString);
+    
+    if (parts.length == 2) {
+      // Successfully split the text around the number
+      return RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: parts[0],
+              style: GoogleFonts.poppins(
+                fontSize: 11 * scaleFactor,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF777673),
+                height: 1.35,
+              ),
+            ),
+            TextSpan(
+              text: numberString,
+              style: GoogleFonts.poppins(
+                fontSize: 13 * scaleFactor, // Slightly larger size
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFF7601A), // Orange color
+                height: 1.35,
+                shadows: [
+                  Shadow(
+                    color: const Color(0xFFF7601A).withOpacity(0.6),
+                    blurRadius: 8,
+                    offset: const Offset(0, 0),
+                  ),
+                  Shadow(
+                    color: const Color(0xFFF7601A).withOpacity(0.2),
+                    blurRadius: 16,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
+              ),
+            ),
+            TextSpan(
+              text: parts[1],
+              style: GoogleFonts.poppins(
+                fontSize: 11 * scaleFactor,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF777673),
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+        textAlign: TextAlign.center,
+      );
+    } else {
+      // Fallback to regular text if parsing fails
+      return Text(
+        fullText,
+        style: GoogleFonts.poppins(
+          fontSize: 11 * scaleFactor,
+          fontWeight: FontWeight.w400,
+          color: const Color(0xFF777673),
+          height: 1.35,
+        ),
+        textAlign: TextAlign.center,
+      );
+    }
   }
 }
 

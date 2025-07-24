@@ -157,7 +157,12 @@ class _DashboardProxy {
   const _DashboardProxy(this.es);
 
   String get homebaseTitle => es ? DashboardTextsEs.homebaseTitle : DashboardTexts.homebaseTitle;
-  String get homebaseSubtitle => es ? DashboardTextsEs.homebaseSubtitle : DashboardTexts.homebaseSubtitle;
+  
+  // Updated to be a function that takes connection count
+  String homebaseSubtitle(int connectionCount) => es 
+      ? DashboardTextsEs.homebaseSubtitle(connectionCount) 
+      : DashboardTexts.homebaseSubtitle(connectionCount);
+  
   String get usernamePrefix => es ? DashboardTextsEs.usernamePrefix : DashboardTexts.usernamePrefix;
   String get noConnections => es ? DashboardTextsEs.noConnections : DashboardTexts.noConnections;
   String get firstConnectionPrompt => es ? DashboardTextsEs.firstConnectionPrompt : DashboardTexts.firstConnectionPrompt;

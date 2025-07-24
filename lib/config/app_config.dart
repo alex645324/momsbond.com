@@ -139,8 +139,18 @@ class DashboardTexts with _TextSelector {
   const DashboardTexts();
   
   // Main text
-  static const String homebaseTitle = 'this is your homebase';
-  static const String homebaseSubtitle = 'where you maintain and create new connections.';
+  static const String homebaseTitle = 'Homebase';
+  
+  // Updated to be a function that takes connection count
+  static String homebaseSubtitle(int connectionCount) {
+    if (connectionCount == 0) {
+      return 'No connections yet';
+    } else if (connectionCount == 1) {
+      return 'Connection score: 1 strong connection';
+    } else {
+      return 'Connection score: $connectionCount strong connections';
+    }
+  }
   
   // Connection text
   static const String noConnections = 'No connections yet.';
@@ -326,7 +336,17 @@ class DashboardTextsEs with _TextSelector {
   const DashboardTextsEs();
 
   static const String homebaseTitle = 'este es tu espacio';
-  static const String homebaseSubtitle = 'donde mantienes y creas nuevas conexiones.';
+  
+  // Updated to be a function that takes connection count
+  static String homebaseSubtitle(int connectionCount) {
+    if (connectionCount == 0) {
+      return 'Aún no hay conexiones';
+    } else if (connectionCount == 1) {
+      return 'Puntuación de conexión: 1 conexión fuerte';
+    } else {
+      return 'Puntuación de conexión: $connectionCount conexiones fuertes';
+    }
+  }
 
   static const String noConnections = 'Aún no hay conexiones.';
   static const String firstConnectionPrompt = '¡Empieza creando tu primera conexión!';
