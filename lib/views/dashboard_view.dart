@@ -723,18 +723,6 @@ class _DashboardViewState extends State<DashboardView> {
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFFF7601A), // Orange color
                 height: 1.35,
-                shadows: [
-                  Shadow(
-                    color: const Color(0xFFF7601A).withOpacity(0.6),
-                    blurRadius: 8,
-                    offset: const Offset(0, 0),
-                  ),
-                  Shadow(
-                    color: const Color(0xFFF7601A).withOpacity(0.2),
-                    blurRadius: 16,
-                    offset: const Offset(0, 0),
-                  ),
-                ],
               ),
             ),
             TextSpan(
