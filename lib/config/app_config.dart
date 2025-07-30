@@ -55,8 +55,8 @@ class MomStageTexts with _TextSelector {
   
   // Stage display text
   static const String tryingLabel = 'trying moms?';
-  static const String pregnantLabel = 'pregnant?';
-  static const String toddlerLabel = 'new mom 🤍';
+  static const String pregnantLabel = 'My father passed when i was young';
+  static const String toddlerLabel = 'My Father passed when i was old';
   static const String teenLabel = 'teen mom?';
   static const String adultLabel = 'adult mom?';
   
@@ -74,13 +74,13 @@ class ChallengeTexts with _TextSelector {
   static const String generalTitle = 'what kinds of challenges\nhave you encountered?';
   
   // Set 1 Questions (New mothers)
-  static const String bodyChanges = 'Feeling like you’ve lost yourself?';
+  static const String bodyChanges = 'Do you ever wake up feeling disconnected—like part of you didn’t come back after he passed?';
   static const String bodyChangesDb = 'Feeling like you’ve lost yourself?';
   
-  static const String depressionAnxiety = 'Terrified of judgment?';
+  static const String depressionAnxiety = 'Do you find yourself crying about him sometimes—maybe when you least expect it?';
   static const String depressionAnxietyDb = 'Terrified of judgment?';
   
-  static const String loneliness = 'Haunted by relentless anxiety?';
+  static const String loneliness = 'Do you catch yourself holding your breath—waiting for something to trigger your grief again?';
   static const String lonelinessDb = 'Haunted by relentless anxiety?';
   
   // Set 2 Questions (Additional motherhood challenges)
@@ -258,8 +258,8 @@ class MomStageTextsEs with _TextSelector {
 
   // Stage display text (Spanish)
   static const String tryingLabel = '¿Buscando quedar embarazada?';
-  static const String pregnantLabel = '¿embarazada?';
-  static const String toddlerLabel = '¿mamá de niño pequeño?';
+  static const String pregnantLabel = 'Mi padre murió cuando era joven';
+  static const String toddlerLabel = 'Mi padre murió cuando era mayor';
   static const String teenLabel = '¿mamá de adolescente?';
   static const String adultLabel = '¿mamá de hijo adulto?';
 
