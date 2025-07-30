@@ -10,7 +10,6 @@ enum ConversationEndStep {
 }
 
 class MessagesModel {
-  final List<String> templateMessages;
   final bool isLoading;
   final String? errorMessage;
   final String conversationId;
@@ -43,7 +42,6 @@ class MessagesModel {
     this.isSubmittingFeedback = false,
     this.conversationEndStep,
     this.starterText,
-    this.templateMessages = const [],
   });
 
   MessagesModel copyWith({
@@ -62,7 +60,6 @@ class MessagesModel {
     bool? isSubmittingFeedback,
     ConversationEndStep? conversationEndStep,
     String? starterText,
-    List<String>? templateMessages,
   }) {
     return MessagesModel(
       isLoading: isLoading ?? this.isLoading,
@@ -80,7 +77,6 @@ class MessagesModel {
       isSubmittingFeedback: isSubmittingFeedback ?? this.isSubmittingFeedback,
       conversationEndStep: conversationEndStep ?? this.conversationEndStep,
       starterText: starterText ?? this.starterText,
-      templateMessages: templateMessages ?? this.templateMessages,
     );
   }
 

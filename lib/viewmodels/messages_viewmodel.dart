@@ -31,7 +31,7 @@ class MessagesViewModel extends ChangeNotifier {
   bool get isConversationActive => _messagesModel.isConversationActive;
   bool get showEndOverlay => _messagesModel.showEndOverlay;
   String get timerDisplay => _messagesModel.timerDisplay;
-  List<String> get templateMessages => _messagesModel.templateMessages;
+
 
   void _updateState(MessagesModel newModel) {
     _messagesModel = newModel;
@@ -87,11 +87,8 @@ class MessagesViewModel extends ChangeNotifier {
     print("MessagesViewModel: Initializing conversation ${initData.conversationId} with real-time messaging");
     
     try {
-      // Generate starter text and template messages once during initialization
+      // Generate starter text once during initialization
       final starterText = _generateStarterText(initData.currentUser, initData.matchedUser);
-
-      // Generate a single conversation-starter template based on current user's challenges
-      final templates = _generateTemplateMessages(initData.currentUser.selectedQuestions);
       
       _setState(_messagesModel.copyWith(
         isLoading: true,
@@ -108,7 +105,6 @@ class MessagesViewModel extends ChangeNotifier {
         selectedFeedback: null,
         conversationEndStep: null,
         errorMessage: null,
-        templateMessages: templates,
       ), 'Conversation initialized state set');
 
       // Create conversation document in Firestore if it doesn't exist
@@ -527,37 +523,5 @@ class MessagesViewModel extends ChangeNotifier {
     _onConversationEnd();
   }
 
-  // --------------------------------------------------
-  // Template message helpers
-  // --------------------------------------------------
 
-  List<String> _generateTemplateMessages(List<String> challenges) {
-    if (challenges.isEmpty) return [];
-
-    // Take the first challenge for template generation
-    final challenge = challenges.first.trim();
-
-    if (challenge.isEmpty) return [];
-
-    // Remove trailing punctuation for smoother question
-    String cleaned = challenge.replaceAll(RegExp(r'[?.!]+'), '').toLowerCase();
-
-    final question = 'Are you also $cleaned?';
-    // Note: For Spanish we could branch here using locale if needed.
-
-    return [question];
-  }
-
-  /// Hides any visible template messages (called when user starts typing or selects one)
-  void hideTemplates() {
-    if (_messagesModel.templateMessages.isNotEmpty) {
-      _setState(_messagesModel.copyWith(templateMessages: []), 'Templates hidden');
-    }
-  }
-
-  /// Sends a template message and then hides templates
-  Future<void> sendTemplateMessage(String text) async {
-    await sendMessage(text);
-    hideTemplates();
-  }
 } 

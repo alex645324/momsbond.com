@@ -129,6 +129,7 @@ class _ChatProxy {
 
   // Input field and starter text
   String get inputHint => _pick(ChatTexts.inputHint, ChatTextsEs.inputHint);
+  String get inputStarterText => _pick(ChatTexts.inputStarterText, ChatTextsEs.inputStarterText);
   String get defaultStarterText => _pick(ChatTexts.defaultStarterText, ChatTextsEs.defaultStarterText);
 
   // Conversation states

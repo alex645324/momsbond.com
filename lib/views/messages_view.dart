@@ -68,14 +68,11 @@ class _MessagesViewState extends State<MessagesView> {
     _chatTextField = LayoutBuilder(
       builder: (context, constraints) {
         final sizes = _calcSizes(constraints.maxWidth);
+        final viewModel = Provider.of<MessagesViewModel>(context, listen: false);
         return ChatTextField(
           onSendMessage: _onSendMessage,
           scaleFactor: sizes.scaleFactor,
-          onTextChanged: (text) {
-            if (text.isNotEmpty) {
-              Provider.of<MessagesViewModel>(context, listen: false).hideTemplates();
-            }
-          },
+          hasMessages: viewModel.messages.isNotEmpty,
         );
       },
     );
@@ -177,7 +174,19 @@ class _MessagesViewState extends State<MessagesView> {
           return _buildErrorState(viewModel);
         }
 
-        return _buildChatInterface(viewModel, chatTextField ?? _chatTextField);
+        // Build ChatTextField with current message state
+        final currentChatTextField = LayoutBuilder(
+          builder: (context, constraints) {
+            final sizes = _calcSizes(constraints.maxWidth);
+            return ChatTextField(
+              onSendMessage: _onSendMessage,
+              scaleFactor: sizes.scaleFactor,
+              hasMessages: viewModel.messages.isNotEmpty,
+            );
+          },
+        );
+        
+        return _buildChatInterface(viewModel, currentChatTextField);
       },
     );
   }
@@ -310,25 +319,7 @@ class _MessagesViewState extends State<MessagesView> {
                       child: chatTextField,
                     ),
 
-                  // Template messages – show only at conversation start
-                  if (viewModel.templateMessages.isNotEmpty && viewModel.messages.isEmpty)
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      // Position just above the input field (approx height 80)
-                      bottom: 20 * scaleFactor + bottomInset + 56 * scaleFactor,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: viewModel.templateMessages.map((t) {
-                          return GestureDetector(
-                            onTap: () {
-                              Provider.of<MessagesViewModel>(context, listen: false).sendTemplateMessage(t);
-                            },
-                            child: _buildTemplateBubble(t, scaleFactor),
-                          );
-                        }).toList(),
-                      ),
-                    ),
+
 
                   // End overlay
                   if (viewModel.showEndOverlay)
@@ -418,39 +409,7 @@ class _MessagesViewState extends State<MessagesView> {
     );
   }
 
-  /// Builds a bubble that visually matches normal user messages (right-aligned)
-  Widget _buildTemplateBubble(String text, double scaleFactor) {
-    return _Shake(
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Container(
-          margin: EdgeInsets.symmetric(vertical: 2 * scaleFactor),
-          padding: EdgeInsets.symmetric(
-            horizontal: 14 * scaleFactor,
-            vertical: 10 * scaleFactor,
-          ),
-          constraints: BoxConstraints(maxWidth: 220 * scaleFactor),
-          decoration: BoxDecoration(
-            color: const Color(0xFFD9D9D9).withOpacity(0.9),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(12 * scaleFactor),
-              topRight: Radius.circular(12 * scaleFactor),
-              bottomLeft: Radius.circular(12 * scaleFactor),
-              bottomRight: Radius.circular(4 * scaleFactor),
-            ),
-            border: Border.all(
-              color: const Color(0xFFEAE7E2),
-              width: 1,
-            ),
-          ),
-          child: Text(
-            text,
-            style: _txt(12, scaleFactor, FontWeight.w400, const Color(0xFF494949)),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   // -------------------------------------------------------------
 
@@ -717,52 +676,4 @@ class _FadeInWrapperState extends State<_FadeInWrapper> with SingleTickerProvide
   }
 }
 
-// ------------------------------
-// Shake animation for template
-// ------------------------------
-
-class _Shake extends StatefulWidget {
-  final Widget child;
-  const _Shake({Key? key, required this.child}) : super(key: key);
-
-  @override
-  _ShakeState createState() => _ShakeState();
-}
-
-class _ShakeState extends State<_Shake> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _animation = Tween(begin: -3.0, end: 3.0)
-        .chain(CurveTween(curve: Curves.easeInOut))
-        .animate(_controller);
-    _controller.repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      child: widget.child,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(_animation.value, 0),
-          child: child,
-        );
-      },
-    );
-  }
-} 
+ 

@@ -168,6 +168,7 @@ class ChatTexts with _TextSelector {
   
   // Input field
   static const String inputHint = 'say how you feel...';
+  static const String inputStarterText = 'Losing him broke something in me I\'ve never talked about. I act strong, but underneath that I\'ve been ';
   static const String defaultStarterText = 'Start your conversation...';
   
   // Conversation ending
@@ -361,6 +362,7 @@ class ChatTextsEs with _TextSelector {
   const ChatTextsEs();
 
   static const String inputHint = 'di cómo te sientes...';
+  static const String inputStarterText = 'Perderlo rompió algo en mí de lo que nunca he hablado. Actúo fuerte, pero por dentro he estado ';
   static const String defaultStarterText = 'Comienza tu conversación...';
 
   static const String conversationEnded = 'Conversación Terminada';

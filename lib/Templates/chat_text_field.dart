@@ -9,12 +9,14 @@ class ChatTextField extends StatefulWidget {
   final Function(String) onSendMessage;
   final double scaleFactor;
   final ValueChanged<String>? onTextChanged;
+  final bool hasMessages; // New parameter to track if conversation has started
 
   const ChatTextField({
     Key? key,
     required this.onSendMessage,
     required this.scaleFactor,
     this.onTextChanged,
+    this.hasMessages = false, // Default to false for first message
   }) : super(key: key);
 
   @override
@@ -24,10 +26,14 @@ class ChatTextField extends StatefulWidget {
 class _ChatTextFieldState extends State<ChatTextField> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  String _starterText = '';
+  int _starterTextLength = 0;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    
     // Listen for focus changes for debugging
     _focusNode.addListener(() {
       _log('FOCUS CHANGE  -> hasFocus=${_focusNode.hasFocus}');
@@ -35,23 +41,147 @@ class _ChatTextFieldState extends State<ChatTextField> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Initialize only once when dependencies are available
+    if (!_isInitialized) {
+      // Only use starter text if no messages exist yet
+      if (!widget.hasMessages) {
+        // Get starter text from configuration
+        _starterText = L.chat(context).inputStarterText;
+        _starterTextLength = _starterText.length;
+        
+        // Initialize controller with starter text
+        _controller.text = _starterText;
+        
+        // Position cursor at end of starter text
+        _controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: _starterTextLength),
+        );
+        
+        // Listen for text changes to protect starter text
+        _controller.addListener(_handleTextChange);
+      } else {
+        // No starter text - conversation already started
+        _starterText = '';
+        _starterTextLength = 0;
+        _controller.text = '';
+      }
+      
+      _isInitialized = true;
+    }
+  }
+
+  @override
+  void didUpdateWidget(ChatTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // If hasMessages changed from false to true, remove starter text
+    if (oldWidget.hasMessages != widget.hasMessages && widget.hasMessages) {
+      _log('Messages detected - removing starter text');
+      
+      // Remove listener if it was active
+      if (_starterTextLength > 0) {
+        _controller.removeListener(_handleTextChange);
+      }
+      
+      // Clear starter text
+      _starterText = '';
+      _starterTextLength = 0;
+      _controller.text = '';
+      
+      // Position cursor at beginning
+      _controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: 0),
+      );
+    }
+  }
+
+  @override
   void dispose() {
+    if (_isInitialized) {
+      _controller.removeListener(_handleTextChange);
+    }
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
+  void _handleTextChange() {
+    final currentText = _controller.text;
+    final currentSelection = _controller.selection;
+    
+    // If no starter text (conversation already started), pass through normally
+    if (_starterTextLength == 0) {
+      widget.onTextChanged?.call(currentText);
+      return;
+    }
+    
+    // If starter text was modified or deleted, restore it
+    if (!currentText.startsWith(_starterText)) {
+      _log('Starter text was modified, restoring...');
+      
+      // Extract user input if any
+      String userInput = '';
+      if (currentText.length > _starterTextLength) {
+        userInput = currentText.substring(_starterTextLength);
+      }
+      
+      // Restore starter text with user input
+      final restoredText = _starterText + userInput;
+      _controller.value = TextEditingValue(
+        text: restoredText,
+        selection: TextSelection.fromPosition(
+          TextPosition(offset: restoredText.length),
+        ),
+      );
+      
+      // Call onTextChanged with user input only
+      widget.onTextChanged?.call(userInput);
+      return;
+    }
+    
+    // Prevent cursor from being placed before starter text
+    if (currentSelection.baseOffset < _starterTextLength) {
+      _controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: _starterTextLength),
+      );
+    }
+    
+    // Call onTextChanged with user input only (text after starter)
+    final userInput = currentText.length > _starterTextLength 
+        ? currentText.substring(_starterTextLength) 
+        : '';
+    widget.onTextChanged?.call(userInput);
+  }
+
   void _sendMessage() {
     final text = _controller.text.trim();
     _log('_sendMessage called with text="$text"');
-    if (text.isNotEmpty) {
-      // Send message via callback
-      widget.onSendMessage(text);
-      // Clear text content
-      _log('Clearing text and requesting focus');
-      _controller.clear();
-      // Immediately request focus to maintain keyboard
-      _focusNode.requestFocus();
+    
+    // Handle sending based on whether starter text is active
+    if (_starterTextLength == 0) {
+      // No starter text - normal mode
+      if (text.isNotEmpty) {
+        widget.onSendMessage(text);
+        _controller.clear();
+        _focusNode.requestFocus();
+      }
+    } else {
+      // Starter text mode - only send if user has added content after starter text
+      if (text.length > _starterTextLength) {
+        // Send complete message including starter text
+        widget.onSendMessage(text);
+        // Reset to starter text only
+        _log('Resetting to starter text and requesting focus');
+        _controller.text = _starterText;
+        _controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: _starterTextLength),
+        );
+        // Immediately request focus to maintain keyboard
+        _focusNode.requestFocus();
+      }
     }
   }
 
@@ -119,14 +249,13 @@ class _ChatTextFieldState extends State<ChatTextField> {
             _sendMessage();
           },
           keyboardType: TextInputType.multiline,
-          onChanged: widget.onTextChanged,
           textInputAction: TextInputAction.newline,
           maxLines: null, // allow unlimited lines
           minLines: 1,
           style: _txt(const Color(0xFF494949)),
           decoration: InputDecoration(
-            hintText: L.chat(context).inputHint,
-            hintStyle: _txt(const Color(0xFF878787)),
+            hintText: _starterTextLength == 0 ? L.chat(context).inputHint : null,
+            hintStyle: _starterTextLength == 0 ? _txt(const Color(0xFF878787)) : null,
             contentPadding: EdgeInsets.symmetric(
               horizontal: 24 * widget.scaleFactor,
               vertical: 18 * widget.scaleFactor,
