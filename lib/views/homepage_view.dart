@@ -218,8 +218,6 @@ class _HomepageViewState extends State<HomepageView> {
                               child: Column(
                                 children: [
                                   _buildLanguageButton(context, viewModel, 'en', AppTexts.language.english),
-                                  const SizedBox(height: 15.07), // Gap between buttons: 59 - 43.93 = 15.07
-                                  _buildLanguageButton(context, viewModel, 'es', AppTexts.language.spanish),
                                 ],
                               ),
                             ),
