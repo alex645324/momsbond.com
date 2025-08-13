@@ -76,6 +76,7 @@ class _MessagesViewState extends State<MessagesView> {
           onSendMessage: _onSendMessage,
           scaleFactor: sizes.scaleFactor,
           hasMessages: viewModel.messages.isNotEmpty,
+          isPastConnection: viewModel.messagesModel.isPastConnection,
           onUserStartedTyping: viewModel.onUserStartedTyping,
           onUserStoppedTyping: viewModel.onUserStoppedTyping,
           onFocusChanged: (hasFocus) {
@@ -209,6 +210,7 @@ class _MessagesViewState extends State<MessagesView> {
               onSendMessage: _onSendMessage,
               scaleFactor: sizes.scaleFactor,
               hasMessages: viewModel.messages.isNotEmpty,
+              isPastConnection: viewModel.messagesModel.isPastConnection,
               onUserStartedTyping: viewModel.onUserStartedTyping,
               onUserStoppedTyping: viewModel.onUserStoppedTyping,
               onFocusChanged: (hasFocus) {

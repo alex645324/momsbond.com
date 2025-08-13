@@ -268,6 +268,7 @@ class SimpleMatching {
       'conversationDurationSeconds': conversationDuration,
       'users': [currentUserId, matchedUserId],
       'status': 'active',
+      'conversationId': matchRef.id, // Store conversation ID for reuse in reconnections
     };
     
     await _safeFirestoreOperation(

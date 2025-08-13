@@ -198,7 +198,7 @@ class ConnectionData {
       otherUserName: otherUserName,
       inactiveDays: daysSinceInteraction,
       isActive: isActive,
-      conversationId: data['conversationId'] ?? '',
+      conversationId: data['conversationId'] ?? docId, // Use match ID as conversation ID for older matches
       matchData: data,
       displayColor: displayColor,
       connectionStrength: currentStrength,

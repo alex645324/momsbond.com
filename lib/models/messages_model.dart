@@ -26,6 +26,7 @@ class MessagesModel {
   final ConversationEndStep? conversationEndStep;
   final String? starterText;
   final Map<String, bool> typingStatus;
+  final bool isPastConnection;
 
   const MessagesModel({
     this.isLoading = true,
@@ -44,6 +45,7 @@ class MessagesModel {
     this.conversationEndStep,
     this.starterText,
     this.typingStatus = const {},
+    this.isPastConnection = false,
   });
 
   MessagesModel copyWith({
@@ -63,6 +65,7 @@ class MessagesModel {
     ConversationEndStep? conversationEndStep,
     String? starterText,
     Map<String, bool>? typingStatus,
+    bool? isPastConnection,
   }) {
     return MessagesModel(
       isLoading: isLoading ?? this.isLoading,
@@ -81,6 +84,7 @@ class MessagesModel {
       conversationEndStep: conversationEndStep ?? this.conversationEndStep,
       starterText: starterText ?? this.starterText,
       typingStatus: typingStatus ?? this.typingStatus,
+      isPastConnection: isPastConnection ?? this.isPastConnection,
     );
   }
 
@@ -293,12 +297,14 @@ class ConversationInitData {
   final CurrentUserData currentUser;
   final MatchedUserData matchedUser;
   final String matchId;
+  final bool isPastConnection;
 
   const ConversationInitData({
     required this.conversationId,
     required this.currentUser,
     required this.matchedUser,
     required this.matchId,
+    this.isPastConnection = false,
   });
 
   static ConversationInitData fromChatPageData(Map<String, dynamic> matchData, String conversationId) {
@@ -315,6 +321,9 @@ class ConversationInitData {
     // Extract user data from matchData
     final matchData = connection.matchData;
     
+    // Check if this is a past connection (has previous conversation history)
+    final bool isPastConnection = connection.conversationId.isNotEmpty;
+    
     return ConversationInitData(
       conversationId: connection.conversationId,
       currentUser: CurrentUserData.fromMap(matchData['currentUser'] ?? {}),
@@ -325,6 +334,7 @@ class ConversationInitData {
         selectedQuestions: [], // Will be populated from matchData if available
       ),
       matchId: connection.id,
+      isPastConnection: isPastConnection,
     );
   }
 }

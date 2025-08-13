@@ -108,6 +108,7 @@ class MessagesViewModel extends ChangeNotifier {
         matchedUser: initData.matchedUser,
         matchId: initData.matchId,
         starterText: starterText,
+        isPastConnection: initData.isPastConnection,
         // Reset conversation state for new conversation
         isConversationActive: true,
         showEndOverlay: false,
@@ -186,7 +187,16 @@ class MessagesViewModel extends ChangeNotifier {
         
         print("MessagesViewModel: Created conversation document: ${initData.conversationId}");
       } else {
-        print("MessagesViewModel: Conversation document already exists: ${initData.conversationId}");
+        // For existing conversations (past connections), reset to active state
+        if (initData.isPastConnection) {
+          await conversationRef.update({
+            'isActive': true,
+            'reactivatedAt': FieldValue.serverTimestamp(),
+          });
+          print("MessagesViewModel: Reactivated existing conversation: ${initData.conversationId}");
+        } else {
+          print("MessagesViewModel: Conversation document already exists: ${initData.conversationId}");
+        }
       }
     } catch (e) {
       print("MessagesViewModel: Error creating conversation document: $e");
@@ -200,12 +210,16 @@ class MessagesViewModel extends ChangeNotifier {
     print("MessagesViewModel: Setting up real-time message listener for: ${_messagesModel.conversationId}");
     
     _messagesSubscription?.cancel();
+    
+    // For past connections, load all conversation history; for new connections, limit to recent messages
+    final int messageLimit = _messagesModel.isPastConnection ? 1000 : 50;
+    
     _messagesSubscription = _firestore
         .collection('conversations')
         .doc(_messagesModel.conversationId)
         .collection('messages')
         .orderBy('createdAt', descending: false)
-        .limit(50)
+        .limit(messageLimit)
         .snapshots()
         .listen(
           (snapshot) {
@@ -215,8 +229,12 @@ class MessagesViewModel extends ChangeNotifier {
                       ChatMessage.fromFirestore(doc, _messagesModel.currentUser.id))
                   .toList();
               
+              final historyInfo = _messagesModel.isPastConnection 
+                  ? '(including conversation history)' 
+                  : '(new conversation)';
+              
               _setState(_messagesModel.copyWith(messages: messages),
-                  'Received ${messages.length} messages via real-time listener');
+                  'Received ${messages.length} messages via real-time listener $historyInfo');
             } catch (e) {
               print("MessagesViewModel: Error processing messages: $e");
             }

@@ -13,6 +13,7 @@ class InvitationManager {
     required String receiverId,
     required String receiverName,
     required String matchId,
+    String? existingConversationId, // Optional: reuse existing conversation ID for past connections
   }) async {
     try {
       print("InvitationManager: Sending invitation from $senderName to $receiverName with matchId: $matchId");
@@ -40,8 +41,8 @@ class InvitationManager {
         }
       }
       
-      // Generate conversationId locally (not stored in database)
-      final conversationId = _generateConversationId(senderId, receiverId);
+      // Use existing conversation ID for past connections, or generate new one for fresh connections
+      final conversationId = existingConversationId ?? _generateConversationId(senderId, receiverId);
       
       // Create the invitation document
       await _firestore.collection('invitations').add({

@@ -10,6 +10,7 @@ class ChatTextField extends StatefulWidget {
   final double scaleFactor;
   final ValueChanged<String>? onTextChanged;
   final bool hasMessages; // New parameter to track if conversation has started
+  final bool isPastConnection; // New parameter to track if this is a past connection
   final VoidCallback? onUserStartedTyping;
   final VoidCallback? onUserStoppedTyping;
   final ValueChanged<bool>? onFocusChanged;
@@ -21,6 +22,7 @@ class ChatTextField extends StatefulWidget {
     required this.scaleFactor,
     this.onTextChanged,
     this.hasMessages = false, // Default to false for first message
+    this.isPastConnection = false, // Default to false for new connections
     this.onUserStartedTyping,
     this.onUserStoppedTyping,
     this.onFocusChanged,
@@ -69,8 +71,8 @@ class _ChatTextFieldState extends State<ChatTextField> {
     
     // Initialize only once when dependencies are available
     if (!_isInitialized) {
-      // Only use starter text if no messages exist yet
-      if (!widget.hasMessages) {
+      // Only use starter text if no messages exist yet AND this is not a past connection
+      if (!widget.hasMessages && !widget.isPastConnection) {
         // Get starter text from configuration
         _starterText = L.chat(context).inputStarterText;
         _starterTextLength = _starterText.length;
@@ -86,7 +88,7 @@ class _ChatTextFieldState extends State<ChatTextField> {
         // Listen for text changes to protect starter text
         _controller.addListener(_handleTextChange);
       } else {
-        // No starter text - conversation already started
+        // No starter text - conversation already started or is a past connection
         _starterText = '';
         _starterTextLength = 0;
         _controller.text = '';

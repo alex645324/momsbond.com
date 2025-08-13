@@ -325,11 +325,16 @@ class DashboardViewModel extends ChangeNotifier {
     // Get the actual match document ID (we need to pass this from _handlePendingChat)
     final matchId = matchData['_matchDocId'] ?? 'unknown_match_id';
     
-    return ConversationInitData.fromChatPageData({
-      'currentUser': currentUserData,
-      'matchedUser': matchedUserData,
-      'matchId': matchId, // Pass the actual match ID string
-    }, conversationId);
+    // Check if this is a past connection (reconnection)
+    final bool isPastConnection = matchData['sessionType'] == 'reconnection';
+    
+    return ConversationInitData(
+      conversationId: conversationId,
+      currentUser: CurrentUserData.fromMap(currentUserData),
+      matchedUser: MatchedUserData.fromMap(matchedUserData),
+      matchId: matchId,
+      isPastConnection: isPastConnection,
+    );
   }
 
   /// Generate conversation ID
@@ -597,13 +602,14 @@ class DashboardViewModel extends ChangeNotifier {
         return;
       }
 
-      // Send invitation with the NEW match ID
+      // Send invitation with the NEW match ID, preserving existing conversation ID for past connections
       await InvitationManager().sendInvitation(
         senderId: userId,
         senderName: senderName,
         receiverId: connection.otherUserId,
         receiverName: connection.displayName,
         matchId: newMatchDoc, // Use NEW match ID instead of old one
+        existingConversationId: connection.conversationId.isNotEmpty ? connection.conversationId : null, // Reuse existing conversation ID for past connections
       );
       
       _notificationCallback?.call("Invitation sent to ${connection.displayName}! Waiting for response...");
@@ -639,8 +645,9 @@ class DashboardViewModel extends ChangeNotifier {
       // Determine user A/B roles (current user can be either A or B)
       final bool isCurrentUserA = originalData['userAId'] == currentUserId;
       
-      // Generate a shared conversation ID for both users
-      final sharedConversationId = _generateConversationId(currentUserId, otherUserId);
+      // Reuse the existing conversation ID from the original connection to maintain conversation history
+      // For old matches without stored conversationId, use the original match ID as the conversation ID
+      final sharedConversationId = originalData['conversationId'] ?? originalMatchId;
       
       // Create new match document with fresh state
       final newMatchRef = _firestore.collection('matches').doc();
