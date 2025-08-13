@@ -54,11 +54,11 @@ class MomStageTexts with _TextSelector {
   static const String adult = 'adult';
   
   // Stage display text
-  static const String tryingLabel = 'trying moms?';
-  static const String pregnantLabel = 'My father passed when i was young';
-  static const String toddlerLabel = 'My Father passed when i was old';
-  static const String teenLabel = 'teen mom?';
-  static const String adultLabel = 'adult mom?';
+  static const String tryingLabel = 'Newborn stage (0–3 months)';
+  static const String pregnantLabel = 'Infant stage (3–12 months)';
+  static const String toddlerLabel = 'Toddler stage (1–3 years)';
+  static const String teenLabel = 'Preschool & Early School-age (3–6 years)';
+  static const String adultLabel = 'Older Kids (6+ years)';
   
   // Stage selection screen text
   static const String selectionTitle = 'what stage are you in?';
@@ -74,37 +74,37 @@ class ChallengeTexts with _TextSelector {
   static const String generalTitle = 'what kinds of challenges\nhave you encountered?';
   
   // Set 1 Questions (New mothers)
-  static const String bodyChanges = 'Do you ever wake up feeling disconnected—like part of you didn’t come back after he passed?';
-  static const String bodyChangesDb = 'Feeling like you’ve lost yourself?';
+  static const String bodyChanges = 'Since giving birth, do you feel people care more about the baby than about you?';
+  static const String bodyChangesDb = 'Since giving birth, do you feel people care more about the baby than about you?';
   
-  static const String depressionAnxiety = 'Do you find yourself crying about him sometimes—maybe when you least expect it?';
-  static const String depressionAnxietyDb = 'Terrified of judgment?';
+  static const String depressionAnxiety = 'Do you feel like you can\'t be fully honest about how you\'re doing without being judged?';
+  static const String depressionAnxietyDb = 'Do you feel like you can\'t be fully honest about how you\'re doing without being judged?';
   
-  static const String loneliness = 'Do you catch yourself holding your breath—waiting for something to trigger your grief again?';
-  static const String lonelinessDb = 'Haunted by relentless anxiety?';
+  static const String loneliness = 'Have you lost friends or connections since becoming a mom?';
+  static const String lonelinessDb = 'Have you lost friends or connections since becoming a mom?';
   
   // Set 2 Questions (Additional motherhood challenges)
-  static const String lostIdentity = 'feeling lost outside of motherhood?';
-  static const String lostIdentityDb = 'Feeling lost outside of motherhood?';
+  static const String lostIdentity = 'Since giving birth, do you feel people care more about the baby than about you?';
+  static const String lostIdentityDb = 'Since giving birth, do you feel people care more about the baby than about you?';
   
-  static const String judgingParenting = 'worried about others judging parenting style?';
-  static const String judgingParentingDb = 'Worried about others judging parenting style?';
+  static const String judgingParenting = 'Do you feel like you can\'t be fully honest about how you\'re doing without being judged?';
+  static const String judgingParentingDb = 'Do you feel like you can\'t be fully honest about how you\'re doing without being judged?';
   
-  static const String fearSick = 'fear of getting sick and not supporting family?';
-  static const String fearSickDb = 'Fear of getting sick and not supporting family?';
+  static const String fearSick = 'Have you lost friends or connections since becoming a mom?';
+  static const String fearSickDb = 'Have you lost friends or connections since becoming a mom?';
   
   // Set 3 Questions (Trying to conceive challenges)
-  static const String fertilityStress = 'stress about fertility and timing?';
-  static const String fertilityStressDb = 'Stress about fertility and timing?';
+  static const String fertilityStress = 'Since giving birth, do you feel people care more about the baby than about you?';
+  static const String fertilityStressDb = 'Since giving birth, do you feel people care more about the baby than about you?';
   
-  static const String socialPressure = 'pressure from family and friends about having kids?';
-  static const String socialPressureDb = 'Pressure from family and friends about having kids?';
+  static const String socialPressure = 'Do you feel like you can\'t be fully honest about how you\'re doing without being judged?';
+  static const String socialPressureDb = 'Do you feel like you can\'t be fully honest about how you\'re doing without being judged?';
   
-  static const String financialWorries = 'worries about financial readiness for a baby?';
-  static const String financialWorriesDb = 'Worries about financial readiness for a baby?';
+  static const String financialWorries = 'Have you lost friends or connections since becoming a mom?';
+  static const String financialWorriesDb = 'Have you lost friends or connections since becoming a mom?';
   
-  static const String relationshipChanges = 'concerns about how a baby will change your relationship?';
-  static const String relationshipChangesDb = 'Concerns about how a baby will change your relationship?';
+  static const String relationshipChanges = 'Do you feel like you can\'t be fully honest about how you\'re doing without being judged?';
+  static const String relationshipChangesDb = 'Do you feel like you can\'t be fully honest about how you\'re doing without being judged?';
 }
 
 /// Authentication related text
@@ -168,8 +168,11 @@ class ChatTexts with _TextSelector {
   
   // Input field
   static const String inputHint = 'say how you feel...';
-  static const String inputStarterText = 'Losing him broke something in me I\'ve never talked about. I act strong, but underneath that I\'ve been ';
+  static const String inputStarterText = 'Since becoming a mom, I feel like I\'ve disappeared from my own story. Everyone asks about the baby, but no one asks about me. I\'ve been ';
   static const String defaultStarterText = 'Start your conversation...';
+  
+  // Chat starter
+  static const String chatStarter = 'Since becoming a mom, I feel like I\'ve disappeared from my own story. Everyone asks about the baby, but no one asks about me. I\'ve been…';
   
   // Conversation ending
   static const String conversationEnded = 'Conversations Ended';
@@ -257,11 +260,11 @@ class MomStageTextsEs with _TextSelector {
   static const String adult = MomStageTexts.adult;
 
   // Stage display text (Spanish)
-  static const String tryingLabel = '¿Buscando quedar embarazada?';
-  static const String pregnantLabel = 'Mi padre murió cuando era joven';
-  static const String toddlerLabel = 'Mi padre murió cuando era mayor';
-  static const String teenLabel = '¿mamá de adolescente?';
-  static const String adultLabel = '¿mamá de hijo adulto?';
+  static const String tryingLabel = 'Etapa de recién nacido (0–3 meses)';
+  static const String pregnantLabel = 'Etapa de bebé (3–12 meses)';
+  static const String toddlerLabel = 'Etapa de niño pequeño (1–3 años)';
+  static const String teenLabel = 'Preescolar y edad escolar temprana (3–6 años)';
+  static const String adultLabel = 'Niños mayores (6+ años)';
 
   // Stage selection screen text
   static const String selectionTitle = '¿en qué etapa estás?';
@@ -277,37 +280,37 @@ class ChallengeTextsEs with _TextSelector {
   static const String generalTitle = '¿qué tipos de desafíos\nhas enfrentado?';
 
   // Set 1 Questions (General motherhood challenges)
-  static const String bodyChanges = '¿preocupada por los cambios en tu cuerpo?';
-  static const String bodyChangesDb = '¿Preocupación por el peso y los cambios corporales?';
+  static const String bodyChanges = 'Desde que diste a luz, ¿sientes que la gente se preocupa más por el bebé que por ti?';
+  static const String bodyChangesDb = 'Desde que diste a luz, ¿sientes que la gente se preocupa más por el bebé que por ti?';
 
-  static const String depressionAnxiety = '¿sientes depresión o ansiedad posparto?';
-  static const String depressionAnxietyDb = '¿Depresión o ansiedad posparto?';
+  static const String depressionAnxiety = '¿Sientes que no puedes ser completamente honesta sobre cómo te sientes sin ser juzgada?';
+  static const String depressionAnxietyDb = '¿Sientes que no puedes ser completamente honesta sobre cómo te sientes sin ser juzgada?';
 
-  static const String loneliness = '¿Te sientes sola porque tus amigas no entienden la maternidad?';
-  static const String lonelinessDb = '¿Soledad porque tus amigas no entienden la maternidad?';
+  static const String loneliness = '¿Has perdido amistades o conexiones desde que te convertiste en madre?';
+  static const String lonelinessDb = '¿Has perdido amistades o conexiones desde que te convertiste en madre?';
 
   // Set 2 Questions
-  static const String lostIdentity = '¿te sientes perdida más allá de la maternidad?';
-  static const String lostIdentityDb = '¿Sentirte perdida más allá de la maternidad?';
+  static const String lostIdentity = 'Desde que diste a luz, ¿sientes que la gente se preocupa más por el bebé que por ti?';
+  static const String lostIdentityDb = 'Desde que diste a luz, ¿sientes que la gente se preocupa más por el bebé que por ti?';
 
-  static const String judgingParenting = '¿preocupada porque otros juzgan tu estilo de crianza?';
-  static const String judgingParentingDb = '¿Preocupada porque otros juzgan tu estilo de crianza?';
+  static const String judgingParenting = '¿Sientes que no puedes ser completamente honesta sobre cómo te sientes sin ser juzgada?';
+  static const String judgingParentingDb = '¿Sientes que no puedes ser completamente honesta sobre cómo te sientes sin ser juzgada?';
 
-  static const String fearSick = '¿miedo a enfermarte y no poder apoyar a tu familia?';
-  static const String fearSickDb = '¿Miedo a enfermarte y no poder apoyar a tu familia?';
+  static const String fearSick = '¿Has perdido amistades o conexiones desde que te convertiste en madre?';
+  static const String fearSickDb = '¿Has perdido amistades o conexiones desde que te convertiste en madre?';
 
   // Set 3 Questions (Trying to conceive challenges)
-  static const String fertilityStress = '¿Estrés por la fertilidad y el momento adecuado?';
-  static const String fertilityStressDb = '¿Estrés por la fertilidad y el momento adecuado?';
+  static const String fertilityStress = 'Desde que diste a luz, ¿sientes que la gente se preocupa más por el bebé que por ti?';
+  static const String fertilityStressDb = 'Desde que diste a luz, ¿sientes que la gente se preocupa más por el bebé que por ti?';
 
-  static const String socialPressure = '¿Presión de familiares y amigos para tener hijos?';
-  static const String socialPressureDb = '¿Presión de familiares y amigos para tener hijos?';
+  static const String socialPressure = '¿Sientes que no puedes ser completamente honesta sobre cómo te sientes sin ser juzgada?';
+  static const String socialPressureDb = '¿Sientes que no puedes ser completamente honesta sobre cómo te sientes sin ser juzgada?';
 
-  static const String financialWorries = '¿preocupaciones financieras para tener un bebé?';
-  static const String financialWorriesDb = '¿Preocupaciones financieras para tener un bebé?';
+  static const String financialWorries = '¿Has perdido amistades o conexiones desde que te convertiste en madre?';
+  static const String financialWorriesDb = '¿Has perdido amistades o conexiones desde que te convertiste en madre?';
 
-  static const String relationshipChanges = '¿temor de cómo un bebé cambiará tu relación?';
-  static const String relationshipChangesDb = '¿Temor de cómo un bebé cambiará tu relación?';
+  static const String relationshipChanges = '¿Sientes que no puedes ser completamente honesta sobre cómo te sientes sin ser juzgada?';
+  static const String relationshipChangesDb = '¿Sientes que no puedes ser completamente honesta sobre cómo te sientes sin ser juzgada?';
 }
 
 /// Authentication related text (Spanish)
@@ -362,8 +365,11 @@ class ChatTextsEs with _TextSelector {
   const ChatTextsEs();
 
   static const String inputHint = 'di cómo te sientes...';
-  static const String inputStarterText = 'Perderlo rompió algo en mí de lo que nunca he hablado. Actúo fuerte, pero por dentro he estado ';
+  static const String inputStarterText = 'Desde que me convertí en madre, siento que he desaparecido de mi propia historia. Todos preguntan por el bebé, pero nadie pregunta por mí. He estado ';
   static const String defaultStarterText = 'Comienza tu conversación...';
+
+  // Chat starter (Spanish)
+  static const String chatStarter = 'Desde que me convertí en madre, siento que he desaparecido de mi propia historia. Todos preguntan por el bebé, pero nadie pregunta por mí. He estado…';
 
   static const String conversationEnded = 'Conversación Terminada';
   static const String feedbackQuestion = '¿Te sentiste conectada con esta persona?';

@@ -6,13 +6,13 @@ This document is the **single source of truth** for the update. It encodes the r
 
 ## 0) Guiding Rules (must be enforced in every step)
 
-* **Bare minimum only.** Remove scope until it breaks; add back only what’s necessary.
+* **Bare minimum only.** Remove scope until it breaks; add back only what's necessary.
 * **MVVM, simplest possible.** No extra layers; avoid third-party deps if at all possible.
-* **Confirm before coding each step.** Post a “Step N — Plan to implement” (see template) and wait for **“Approved”** before writing code.
+* **Confirm before coding each step.** Post a "Step N — Plan to implement" (see template) and wait for **"Approved"** before writing code.
 
 ### Confirmation Template (use verbatim)
 
-**“Step N — Plan to implement:”**
+**"Step N — Plan to implement:"**
 
 * Files to add/edit (exact paths)
 * Data structures / functions (names + signatures)
@@ -20,7 +20,7 @@ This document is the **single source of truth** for the update. It encodes the r
 * What will **not** be included
 * Test cases to run (exact steps)
 
-Wait for “**Approved**”. Only then implement. Repeat every step.
+Wait for "**Approved**". Only then implement. Repeat every step.
 
 ---
 
@@ -31,7 +31,7 @@ Wait for “**Approved**”. Only then implement. Repeat every step.
 1. **Stage labels (UI text only)**
 2. **Challenge questions (UI text only; same 3 questions for all stages)**
 3. **Chat starter text (UI text only)**
-4. **Typing indicator** (minimal, iMessage-like: show “typing…” when peer is typing)
+4. **Typing indicator** (minimal, iMessage-like: show "typing…" when peer is typing)
 
 ### Out-of-scope (must not change)
 
@@ -51,11 +51,11 @@ Do **not** hardcode strings in views.
 
 Replace current options with these **exact** labels:
 
-* **“Newborn stage (0–3 months)”**
-* **“Infant stage (3–12 months)”**
-* **“Toddler stage (1–3 years)”**
-* **“Preschool & Early School-age (3–6 years)”**
-* **“Older Kids (6+ years)”**
+* **"Newborn stage (0–3 months)"**
+* **"Infant stage (3–12 months)"**
+* **"Toddler stage (1–3 years)"**
+* **"Preschool & Early School-age (3–6 years)"**
+* **"Older Kids (6+ years)"**
 
 > If Spanish is supported via `AppTextsEs`, mirror these labels accurately (developer to provide faithful translations **after approval**).
 
@@ -63,21 +63,21 @@ Replace current options with these **exact** labels:
 
 Replace **all existing challenge question variants** with **this single set** (use everywhere questions are shown):
 
-1. “Since giving birth, do you feel people care more about the baby than about you?”
-2. “Do you feel like you can’t be fully honest about how you’re doing without being judged?”
-3. “Have you lost friends or connections since becoming a mom?”
+1. "Since giving birth, do you feel people care more about the baby than about you?"
+2. "Do you feel like you can't be fully honest about how you're doing without being judged?"
+3. "Have you lost friends or connections since becoming a mom?"
 
 ### 2.3 Chat Starter (prewritten)
 
 Replace with this **exact** text:
 
-> “Since becoming a mom, I feel like I’ve disappeared from my own story. Everyone asks about the baby, but no one asks about me. I’ve been…”
+> "Since becoming a mom, I feel like I've disappeared from my own story. Everyone asks about the baby, but no one asks about me. I've been…"
 
 ---
 
 ## 3) Typing Indicator — minimal design
 
-**Goal:** Show a subtle “typing…” indicator when the **other** user is actively typing, similar to iMessage at a simple level.
+**Goal:** Show a subtle "typing…" indicator when the **other** user is actively typing, similar to iMessage at a simple level.
 
 **Constraints:**
 
@@ -88,7 +88,7 @@ Replace with this **exact** text:
 **Approach (bare-minimum):**
 
 * **Write:** Each client toggles a **volatile** typing signal in Firestore while user is typing.
-* **Read:** The peer listens and shows “typing…” if the signal is “fresh”.
+* **Read:** The peer listens and shows "typing…" if the signal is "fresh".
 
 **Data (additions only):**
 
@@ -108,11 +108,11 @@ Replace with this **exact** text:
 
 * On input change: set `isTyping = true`, `updatedAt = serverTimestamp()` **debounced** (e.g., fire after 300–500ms idle).
 * On input blur / send / idle timeout (e.g., 3s without keystrokes): set `isTyping = false` (best effort; if missed, the freshness rule below will clear it).
-* **Freshness rule:** Consider a peer as typing if `isTyping == true` **and** `now - updatedAt < 4s`. UI hides indicator otherwise (prevents stuck “typing…”).
+* **Freshness rule:** Consider a peer as typing if `isTyping == true` **and** `now - updatedAt < 4s`. UI hides indicator otherwise (prevents stuck "typing…").
 
 **UI:**
 
-* Single line text “typing…” below the last message, aligned left, small, secondary color. No avatars, no animation.
+* Single line text "typing…" below the last message, aligned left, small, secondary color. No avatars, no animation.
 
 ---
 
@@ -183,7 +183,7 @@ Replace with this **exact** text:
 
 ### Step 6 — Typing indicator (UI)
 
-* **Edit** `lib/views/chat_view.dart`: show “typing…” line when `isPeerTyping` true.
+* **Edit** `lib/views/chat_view.dart`: show "typing…" line when `isPeerTyping` true.
 * **What not to do:** No extra UI chrome or animations.
 
 **Tests:** Indicator visibility toggles with mock VM state and timestamp freshness.
@@ -193,7 +193,7 @@ Replace with this **exact** text:
 ## 7) Developer workflow (repeat per step)
 
 1. Post the **confirmation template** for the step.
-2. Wait for **“Approved.”**
+2. Wait for **"Approved."**
 3. Implement exactly what was approved.
 4. Run the listed tests and report results.
 5. Proceed to the next step.
@@ -223,13 +223,13 @@ class AppTexts {
   // Challenges (same 3 everywhere)
   static const List<String> sharedChallengeQuestions = [
     'Since giving birth, do you feel people care more about the baby than about you?',
-    'Do you feel like you can’t be fully honest about how you’re doing without being judged?',
+    'Do you feel like you can't be fully honest about how you're doing without being judged?',
     'Have you lost friends or connections since becoming a mom?',
   ];
 
   // Chat starter
   static const String chatStarter =
-    'Since becoming a mom, I feel like I’ve disappeared from my own story. Everyone asks about the baby, but no one asks about me. I’ve been…';
+    'Since becoming a mom, I feel like I've disappeared from my own story. Everyone asks about the baby, but no one asks about me. I've been…';
 }
 ```
 

@@ -25,6 +25,7 @@ class MessagesModel {
   final bool isSubmittingFeedback;
   final ConversationEndStep? conversationEndStep;
   final String? starterText;
+  final Map<String, bool> typingStatus;
 
   const MessagesModel({
     this.isLoading = true,
@@ -42,6 +43,7 @@ class MessagesModel {
     this.isSubmittingFeedback = false,
     this.conversationEndStep,
     this.starterText,
+    this.typingStatus = const {},
   });
 
   MessagesModel copyWith({
@@ -60,6 +62,7 @@ class MessagesModel {
     bool? isSubmittingFeedback,
     ConversationEndStep? conversationEndStep,
     String? starterText,
+    Map<String, bool>? typingStatus,
   }) {
     return MessagesModel(
       isLoading: isLoading ?? this.isLoading,
@@ -77,6 +80,7 @@ class MessagesModel {
       isSubmittingFeedback: isSubmittingFeedback ?? this.isSubmittingFeedback,
       conversationEndStep: conversationEndStep ?? this.conversationEndStep,
       starterText: starterText ?? this.starterText,
+      typingStatus: typingStatus ?? this.typingStatus,
     );
   }
 
@@ -85,6 +89,7 @@ class MessagesModel {
   bool get isConversationEnded => !isConversationActive;
   String get timerDisplay => '${remainingSeconds ~/ 60}:${(remainingSeconds % 60).toString().padLeft(2, '0')}';
   bool get isFirstConversation => true; // Simplified since conversationCount was removed
+  bool get isOtherUserTyping => typingStatus.values.any((isTyping) => isTyping);
   
   // Helper getters for end flow
   bool get showFeedbackPrompt => conversationEndStep == ConversationEndStep.feedbackPrompt;

@@ -73,6 +73,8 @@ class _MessagesViewState extends State<MessagesView> {
           onSendMessage: _onSendMessage,
           scaleFactor: sizes.scaleFactor,
           hasMessages: viewModel.messages.isNotEmpty,
+          onUserStartedTyping: viewModel.onUserStartedTyping,
+          onUserStoppedTyping: viewModel.onUserStoppedTyping,
         );
       },
     );
@@ -182,6 +184,8 @@ class _MessagesViewState extends State<MessagesView> {
               onSendMessage: _onSendMessage,
               scaleFactor: sizes.scaleFactor,
               hasMessages: viewModel.messages.isNotEmpty,
+              onUserStartedTyping: viewModel.onUserStartedTyping,
+              onUserStoppedTyping: viewModel.onUserStoppedTyping,
             );
           },
         );
@@ -308,6 +312,15 @@ class _MessagesViewState extends State<MessagesView> {
                           ),
                         ),
                       ),
+                    ),
+
+                  // Typing indicator just above input field
+                  if (viewModel.isConversationActive && viewModel.isOtherUserTyping)
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 80 * scaleFactor + bottomInset,
+                      child: _buildTypingIndicator(scaleFactor),
                     ),
 
                   // Input field at bottom
@@ -591,6 +604,50 @@ class _MessagesViewState extends State<MessagesView> {
     );
   }
 
+  Widget _buildTypingIndicator(double scaleFactor) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8 * scaleFactor),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 16 * scaleFactor,
+              vertical: 12 * scaleFactor,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFB0B0B0), // Partner message color
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16 * scaleFactor),
+                topRight: Radius.circular(16 * scaleFactor),
+                bottomLeft: Radius.circular(4 * scaleFactor),
+                bottomRight: Radius.circular(16 * scaleFactor),
+              ),
+              border: Border.all(
+                color: const Color(0xFFEAE7E2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTypingDot(scaleFactor, 0),
+                SizedBox(width: 4 * scaleFactor),
+                _buildTypingDot(scaleFactor, 200),
+                SizedBox(width: 4 * scaleFactor),
+                _buildTypingDot(scaleFactor, 400),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypingDot(double scaleFactor, int delay) {
+    return _TypingDot(scaleFactor: scaleFactor, delay: delay);
+  }
+
   String _localizedStarterText(BuildContext context, String? original) {
     if (original != null && original.startsWith('your connection also struggles with')) {
       // Extract topic
@@ -673,6 +730,64 @@ class _FadeInWrapperState extends State<_FadeInWrapper> with SingleTickerProvide
   @override
   Widget build(BuildContext context) {
     return FadeTransition(opacity: _controller, child: widget.child);
+  }
+}
+
+// Animated typing dot widget
+class _TypingDot extends StatefulWidget {
+  final double scaleFactor;
+  final int delay;
+
+  const _TypingDot({required this.scaleFactor, required this.delay});
+
+  @override
+  _TypingDotState createState() => _TypingDotState();
+}
+
+class _TypingDotState extends State<_TypingDot> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1400),
+      vsync: this,
+    );
+    _animation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    // Start animation with delay
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) {
+        _controller.repeat(reverse: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: 6 * widget.scaleFactor,
+          height: 6 * widget.scaleFactor,
+          decoration: BoxDecoration(
+            color: const Color(0xFF494949).withValues(alpha: _animation.value),
+            shape: BoxShape.circle,
+          ),
+        );
+      },
+    );
   }
 }
 

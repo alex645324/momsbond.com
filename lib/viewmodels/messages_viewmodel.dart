@@ -4,11 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/messages_model.dart';
 import '../viewmodels/dashboard_viewmodel.dart';
 import '../Database_logic/simple_matching.dart';
+import '../Database_logic/typing_indicator_service.dart';
 import '../config/app_config.dart';
 import 'package:meta/meta.dart';
 
 class MessagesViewModel extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TypingIndicatorService _typingService = TypingIndicatorService();
   MessagesModel _messagesModel = const MessagesModel();
   
   // Timer for conversation management
@@ -19,6 +21,12 @@ class MessagesViewModel extends ChangeNotifier {
   
   // Listener for conversation status changes (e.g., remote user ends conversation early)
   StreamSubscription<DocumentSnapshot>? _conversationStatusSubscription;
+  
+  // Typing indicator subscription
+  StreamSubscription<Map<String, bool>>? _typingSubscription;
+  
+  // Timer for automatically stopping typing indicator
+  Timer? _typingTimer;
   
   bool _isInitialized = false;
   bool _conversationEndTriggered = false;
@@ -31,6 +39,7 @@ class MessagesViewModel extends ChangeNotifier {
   bool get isConversationActive => _messagesModel.isConversationActive;
   bool get showEndOverlay => _messagesModel.showEndOverlay;
   String get timerDisplay => _messagesModel.timerDisplay;
+  bool get isOtherUserTyping => _messagesModel.isOtherUserTyping;
 
 
   void _updateState(MessagesModel newModel) {
@@ -53,6 +62,8 @@ class MessagesViewModel extends ChangeNotifier {
     _countdownTimer?.cancel();
     _messagesSubscription?.cancel();
     _conversationStatusSubscription?.cancel();
+    _typingSubscription?.cancel();
+    _typingTimer?.cancel();
   }
 
   // Clear a user doc's conversation flags
@@ -115,6 +126,9 @@ class MessagesViewModel extends ChangeNotifier {
 
       // Listen for remote conversation end events (isActive flag)
       _setupConversationStatusListener();
+      
+      // Set up typing indicator listener
+      _setupTypingListener();
 
       // Get conversation duration from config
       final conversationDuration = AppConfig.chatDurationSeconds;
@@ -216,6 +230,28 @@ class MessagesViewModel extends ChangeNotifier {
         );
   }
 
+  void _setupTypingListener() {
+    if (_messagesModel.conversationId.isEmpty) return;
+    
+    print("MessagesViewModel: Setting up typing indicator listener for: ${_messagesModel.conversationId}");
+    
+    _typingSubscription?.cancel();
+    _typingSubscription = _typingService
+        .getTypingStatusStream(
+          conversationId: _messagesModel.conversationId,
+          excludeUserId: _messagesModel.currentUser.id,
+        )
+        .listen(
+          (typingStatus) {
+            _setState(_messagesModel.copyWith(typingStatus: typingStatus),
+                'Updated typing status: $typingStatus');
+          },
+          onError: (error) {
+            print("MessagesViewModel: Error in typing indicator listener: $error");
+          },
+        );
+  }
+
   void _startAdminManagedTimer(String matchId) {
     _countdownTimer?.cancel();
     
@@ -257,6 +293,9 @@ class MessagesViewModel extends ChangeNotifier {
     try {
       print("MessagesViewModel: Sending message to conversation: ${_messagesModel.conversationId}");
       
+      // Stop typing indicator when sending message
+      onUserStoppedTyping();
+      
       // Send message to Firestore - it will be received by both users via listener
       await _firestore
           .collection('conversations')
@@ -280,6 +319,39 @@ class MessagesViewModel extends ChangeNotifier {
     }
   }
 
+  /// Called when user starts typing
+  void onUserStartedTyping() {
+    if (!_messagesModel.isConversationActive) return;
+    
+    _typingService.updateTypingStatus(
+      conversationId: _messagesModel.conversationId,
+      userId: _messagesModel.currentUser.id,
+      isTyping: true,
+    );
+    
+    // Auto-stop typing indicator after 3 seconds of inactivity
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(seconds: 3), () {
+      _typingService.updateTypingStatus(
+        conversationId: _messagesModel.conversationId,
+        userId: _messagesModel.currentUser.id,
+        isTyping: false,
+      );
+    });
+  }
+
+  /// Called when user stops typing
+  void onUserStoppedTyping() {
+    if (!_messagesModel.isConversationActive) return;
+    
+    _typingTimer?.cancel();
+    _typingService.updateTypingStatus(
+      conversationId: _messagesModel.conversationId,
+      userId: _messagesModel.currentUser.id,
+      isTyping: false,
+    );
+  }
+
   Future<void> _onConversationEnd() async {
     if (_conversationEndTriggered) {
       print("MessagesViewModel: Conversation end already triggered, ignoring");
@@ -292,6 +364,12 @@ class MessagesViewModel extends ChangeNotifier {
     try {
       // Cancel timer and message listener
       _cancelStreamsAndTimers();
+      
+      // Clear typing status
+      await _typingService.clearTypingStatus(
+        conversationId: _messagesModel.conversationId,
+        userId: _messagesModel.currentUser.id,
+      );
       
       // Update conversation status in Firestore
       await _firestore
@@ -470,6 +548,11 @@ class MessagesViewModel extends ChangeNotifier {
     // Update user status when disposing
     if (_isInitialized && !_conversationEndTriggered) {
       _clearConversationFlags(_messagesModel.currentUser.id);
+      // Clear typing status on dispose
+      _typingService.clearTypingStatus(
+        conversationId: _messagesModel.conversationId,
+        userId: _messagesModel.currentUser.id,
+      );
       print("MessagesViewModel: Dispose cleanup - cleared user status and activeMatchId");
     }
     

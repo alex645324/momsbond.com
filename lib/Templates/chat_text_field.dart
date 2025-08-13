@@ -10,6 +10,8 @@ class ChatTextField extends StatefulWidget {
   final double scaleFactor;
   final ValueChanged<String>? onTextChanged;
   final bool hasMessages; // New parameter to track if conversation has started
+  final VoidCallback? onUserStartedTyping;
+  final VoidCallback? onUserStoppedTyping;
 
   const ChatTextField({
     Key? key,
@@ -17,6 +19,8 @@ class ChatTextField extends StatefulWidget {
     required this.scaleFactor,
     this.onTextChanged,
     this.hasMessages = false, // Default to false for first message
+    this.onUserStartedTyping,
+    this.onUserStoppedTyping,
   }) : super(key: key);
 
   @override
@@ -29,6 +33,7 @@ class _ChatTextFieldState extends State<ChatTextField> {
   String _starterText = '';
   int _starterTextLength = 0;
   bool _isInitialized = false;
+  bool _wasTyping = false;
 
   @override
   void initState() {
@@ -154,6 +159,16 @@ class _ChatTextFieldState extends State<ChatTextField> {
         ? currentText.substring(_starterTextLength) 
         : '';
     widget.onTextChanged?.call(userInput);
+    
+    // Handle typing indicators
+    final isTyping = userInput.isNotEmpty;
+    if (isTyping && !_wasTyping) {
+      widget.onUserStartedTyping?.call();
+      _wasTyping = true;
+    } else if (!isTyping && _wasTyping) {
+      widget.onUserStoppedTyping?.call();
+      _wasTyping = false;
+    }
   }
 
   void _sendMessage() {
@@ -166,6 +181,8 @@ class _ChatTextFieldState extends State<ChatTextField> {
       if (text.isNotEmpty) {
         widget.onSendMessage(text);
         _controller.clear();
+        widget.onUserStoppedTyping?.call();
+        _wasTyping = false;
         _focusNode.requestFocus();
       }
     } else {
@@ -173,6 +190,8 @@ class _ChatTextFieldState extends State<ChatTextField> {
       if (text.length > _starterTextLength) {
         // Send complete message including starter text
         widget.onSendMessage(text);
+        widget.onUserStoppedTyping?.call();
+        _wasTyping = false;
         // Reset to starter text only
         _log('Resetting to starter text and requesting focus');
         _controller.text = _starterText;
