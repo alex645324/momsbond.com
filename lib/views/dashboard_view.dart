@@ -250,11 +250,11 @@ class _DashboardViewState extends State<DashboardView> {
                 GestureDetector(
                   onTap: _handleSmallButtonTap,
                   child: Container(
-                    height: 20,
-                    width: 28, // Horizontally elongated
+                    height: 36,
+                    width: 48, // Increased for better touch target
                     decoration: BoxDecoration(
                       color: const Color(0xFFEAE7E2), // Light gray background
-                      borderRadius: BorderRadius.circular(10), // Rounded corners
+                      borderRadius: BorderRadius.circular(12), // Slightly larger corners
                       border: Border.all(
                         color: const Color(0xFFC4C1BE), // Slightly darker border
                         width: 0.5,
@@ -263,7 +263,7 @@ class _DashboardViewState extends State<DashboardView> {
                     child: const Center(
                       child: Icon(
                         Icons.chevron_right, // Right-pointing arrow
-                        size: 16,
+                        size: 20,
                         color: Color(0xFF494949), // Dark gray arrow
                       ),
                     ),
@@ -815,11 +815,13 @@ class InvitationDialog extends StatelessWidget {
           ),
         ],
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       actions: [
         TextButton(
           child: Text(L.ui(context).decline),
           onPressed: onDecline,
         ),
+        const SizedBox(width: 12),
         ElevatedButton(
           onPressed: onAccept,
           style: ElevatedButton.styleFrom(
@@ -827,12 +829,15 @@ class InvitationDialog extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
+            minimumSize: const Size(120, 50),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           ),
           child: Text(
             L.ui(context).accept,
             style: GoogleFonts.poppins(
               color: const Color(0xFF494949),
               fontWeight: FontWeight.w500,
+              fontSize: 16,
             ),
           ),
         ),

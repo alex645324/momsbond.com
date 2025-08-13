@@ -164,9 +164,11 @@ class ChatInvitationPopup extends StatelessWidget {
                   GestureDetector(
                     onTap: onAccept,
                     child: Container(
+                      width: 120,
+                      height: 50,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
+                        horizontal: 32,
+                        vertical: 18,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.pink[50],
@@ -187,7 +189,7 @@ class ChatInvitationPopup extends StatelessWidget {
                         "Accept",
                         style: TextStyle(
                           fontFamily: "Nuosu SIL",
-                          fontSize: 14,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.pink[400],
                         ),
