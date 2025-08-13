@@ -12,6 +12,8 @@ class ChatTextField extends StatefulWidget {
   final bool hasMessages; // New parameter to track if conversation has started
   final VoidCallback? onUserStartedTyping;
   final VoidCallback? onUserStoppedTyping;
+  final ValueChanged<bool>? onFocusChanged;
+  final VoidCallback? onTextFieldHeightChanged;
 
   const ChatTextField({
     Key? key,
@@ -21,6 +23,8 @@ class ChatTextField extends StatefulWidget {
     this.hasMessages = false, // Default to false for first message
     this.onUserStartedTyping,
     this.onUserStoppedTyping,
+    this.onFocusChanged,
+    this.onTextFieldHeightChanged,
   }) : super(key: key);
 
   @override
@@ -34,14 +38,28 @@ class _ChatTextFieldState extends State<ChatTextField> {
   int _starterTextLength = 0;
   bool _isInitialized = false;
   bool _wasTyping = false;
+  bool _hasFocus = false;
 
   @override
   void initState() {
     super.initState();
     
-    // Listen for focus changes for debugging
+    // Listen for focus changes
     _focusNode.addListener(() {
-      _log('FOCUS CHANGE  -> hasFocus=${_focusNode.hasFocus}');
+      final newFocusState = _focusNode.hasFocus;
+      _log('FOCUS CHANGE  -> hasFocus=$newFocusState');
+      
+      if (_hasFocus != newFocusState) {
+        _hasFocus = newFocusState;
+        widget.onFocusChanged?.call(_hasFocus);
+        
+        // Handle typing indicator based on focus
+        if (_hasFocus) {
+          widget.onUserStartedTyping?.call();
+        } else {
+          widget.onUserStoppedTyping?.call();
+        }
+      }
     });
   }
 
@@ -120,6 +138,7 @@ class _ChatTextFieldState extends State<ChatTextField> {
     // If no starter text (conversation already started), pass through normally
     if (_starterTextLength == 0) {
       widget.onTextChanged?.call(currentText);
+      widget.onTextFieldHeightChanged?.call();
       return;
     }
     
@@ -160,15 +179,10 @@ class _ChatTextFieldState extends State<ChatTextField> {
         : '';
     widget.onTextChanged?.call(userInput);
     
-    // Handle typing indicators
-    final isTyping = userInput.isNotEmpty;
-    if (isTyping && !_wasTyping) {
-      widget.onUserStartedTyping?.call();
-      _wasTyping = true;
-    } else if (!isTyping && _wasTyping) {
-      widget.onUserStoppedTyping?.call();
-      _wasTyping = false;
-    }
+    // Note: Typing indicators now handled by focus changes
+    
+    // Notify about potential height changes due to text changes
+    widget.onTextFieldHeightChanged?.call();
   }
 
   void _sendMessage() {

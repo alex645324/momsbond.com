@@ -319,9 +319,11 @@ class MessagesViewModel extends ChangeNotifier {
     }
   }
 
-  /// Called when user starts typing
+  /// Called when user starts typing (focus gained)
   void onUserStartedTyping() {
     if (!_messagesModel.isConversationActive) return;
+    
+    print("MessagesViewModel: User started typing (focus gained)");
     
     _typingService.updateTypingStatus(
       conversationId: _messagesModel.conversationId,
@@ -329,20 +331,15 @@ class MessagesViewModel extends ChangeNotifier {
       isTyping: true,
     );
     
-    // Auto-stop typing indicator after 3 seconds of inactivity
+    // Cancel any existing timer since we're now actively showing typing
     _typingTimer?.cancel();
-    _typingTimer = Timer(const Duration(seconds: 3), () {
-      _typingService.updateTypingStatus(
-        conversationId: _messagesModel.conversationId,
-        userId: _messagesModel.currentUser.id,
-        isTyping: false,
-      );
-    });
   }
 
-  /// Called when user stops typing
+  /// Called when user stops typing (focus lost)
   void onUserStoppedTyping() {
     if (!_messagesModel.isConversationActive) return;
+    
+    print("MessagesViewModel: User stopped typing (focus lost)");
     
     _typingTimer?.cancel();
     _typingService.updateTypingStatus(

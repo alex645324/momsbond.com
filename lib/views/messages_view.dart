@@ -34,6 +34,8 @@ class _MessagesViewState extends State<MessagesView> {
   late final Widget _chatTextField;
   bool _isNearBottom = true;
   int _previousMessageCount = 0;
+  final GlobalKey _chatTextFieldKey = GlobalKey();
+  double _textFieldHeight = 56.0; // Default height
 
   // -------------------------------------------------------------------
   // Small private helpers to remove repetition (public API unchanged)
@@ -70,11 +72,19 @@ class _MessagesViewState extends State<MessagesView> {
         final sizes = _calcSizes(constraints.maxWidth);
         final viewModel = Provider.of<MessagesViewModel>(context, listen: false);
         return ChatTextField(
+          key: _chatTextFieldKey,
           onSendMessage: _onSendMessage,
           scaleFactor: sizes.scaleFactor,
           hasMessages: viewModel.messages.isNotEmpty,
           onUserStartedTyping: viewModel.onUserStartedTyping,
           onUserStoppedTyping: viewModel.onUserStoppedTyping,
+          onFocusChanged: (hasFocus) {
+            // Focus-based typing is handled by the callbacks above
+            _updateTextFieldHeight(sizes.scaleFactor);
+          },
+          onTextFieldHeightChanged: () {
+            _updateTextFieldHeight(sizes.scaleFactor);
+          },
         );
       },
     );
@@ -146,6 +156,20 @@ class _MessagesViewState extends State<MessagesView> {
     }
   }
 
+  void _updateTextFieldHeight(double scaleFactor) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_chatTextFieldKey.currentContext != null) {
+        final RenderBox renderBox = _chatTextFieldKey.currentContext!.findRenderObject() as RenderBox;
+        final newHeight = renderBox.size.height;
+        if (newHeight != _textFieldHeight) {
+          setState(() {
+            _textFieldHeight = newHeight;
+          });
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<MessagesViewModel>(
@@ -181,11 +205,19 @@ class _MessagesViewState extends State<MessagesView> {
           builder: (context, constraints) {
             final sizes = _calcSizes(constraints.maxWidth);
             return ChatTextField(
+              key: _chatTextFieldKey,
               onSendMessage: _onSendMessage,
               scaleFactor: sizes.scaleFactor,
               hasMessages: viewModel.messages.isNotEmpty,
               onUserStartedTyping: viewModel.onUserStartedTyping,
               onUserStoppedTyping: viewModel.onUserStoppedTyping,
+              onFocusChanged: (hasFocus) {
+                // Focus-based typing is handled by the callbacks above
+                _updateTextFieldHeight(sizes.scaleFactor);
+              },
+              onTextFieldHeightChanged: () {
+                _updateTextFieldHeight(sizes.scaleFactor);
+              },
             );
           },
         );
@@ -314,15 +346,6 @@ class _MessagesViewState extends State<MessagesView> {
                       ),
                     ),
 
-                  // Typing indicator just above input field
-                  if (viewModel.isConversationActive && viewModel.isOtherUserTyping)
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 80 * scaleFactor + bottomInset,
-                      child: _buildTypingIndicator(scaleFactor),
-                    ),
-
                   // Input field at bottom
                   if (viewModel.isConversationActive)
                     Positioned(
@@ -330,6 +353,15 @@ class _MessagesViewState extends State<MessagesView> {
                       right: 16,
                       bottom: 20 * scaleFactor + bottomInset,
                       child: chatTextField,
+                    ),
+
+                  // Typing indicator directly above input field (dynamic positioning)
+                  if (viewModel.isConversationActive && viewModel.isOtherUserTyping)
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: (_textFieldHeight + 28) + bottomInset, // Dynamic height + padding
+                      child: _buildTypingIndicator(scaleFactor),
                     ),
 
 
